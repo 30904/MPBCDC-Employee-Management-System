@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const connectDB = require('./config/db');
+const { API_BASE_PATH } = require('./config/api');
 const apiRoutes = require('./routes');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 const { uploadDir } = require('./middleware/uploadMiddleware');
@@ -28,7 +29,12 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use('/uploads', express.static(uploadDir));
 
-app.use('/api', apiRoutes);
+// All REST endpoints live under /api (see config/api.js)
+app.get('/', (_req, res) => {
+  res.redirect(API_BASE_PATH);
+});
+
+app.use(API_BASE_PATH, apiRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
@@ -38,7 +44,8 @@ async function startServer() {
     await connectDB();
     app.listen(PORT, () => {
       console.log(`MPBCDC API running on http://localhost:${PORT}`);
-      console.log(`Health check: http://localhost:${PORT}/api/health`);
+      console.log(`API base path: ${API_BASE_PATH}`);
+      console.log(`Health check: http://localhost:${PORT}${API_BASE_PATH}/health`);
     });
   } catch (error) {
     console.error('Failed to start server:', error.message);

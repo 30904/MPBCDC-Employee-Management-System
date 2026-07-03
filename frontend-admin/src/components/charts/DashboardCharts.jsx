@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import apiClient from '../../api/apiClient.js';
+import { buildPaginationQuery, unwrapPaginatedData } from '../../api/response.js';
 import { chartDefaults } from './registerCharts.js';
 import './DashboardCharts.css';
 
@@ -43,8 +44,9 @@ export default function DashboardCharts() {
   useEffect(() => {
     async function loadCompanies() {
       try {
-        const { data } = await apiClient.get('/companies');
-        setCompanies(data.data ?? data ?? []);
+        const response = await apiClient.get(`/companies?${buildPaginationQuery({ page: 1, limit: 100 })}`);
+        const { items } = unwrapPaginatedData(response);
+        setCompanies(items);
       } catch {
         setCompanies([]);
       } finally {

@@ -1,4 +1,5 @@
 import apiClient from './apiClient.js';
+import { unwrapApiData } from './response.js';
 
 /**
  * Upload a PDF attachment for loan/leave applications.
@@ -22,9 +23,9 @@ export async function uploadPdfFile(file) {
   const formData = new FormData();
   formData.append('file', file);
 
-  const { data } = await apiClient.post('/uploads', formData, {
+  const response = await apiClient.post('/uploads', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 
-  return data.data ?? data;
+  return unwrapApiData(response);
 }

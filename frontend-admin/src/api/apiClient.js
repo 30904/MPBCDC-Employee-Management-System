@@ -1,8 +1,10 @@
 import axios from 'axios';
+import { API_BASE_PATH } from './config.js';
+import { getApiErrorMessage, isApiError } from './response.js';
 import { clearAuth, getToken } from '../utils/auth.js';
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: API_BASE_PATH,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -17,7 +19,12 @@ apiClient.interceptors.request.use((config) => {
 });
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if (response?.data && isApiError(response.data)) {
+      return Promise.reject(new Error(response.data.error || 'Request failed'));
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       clearAuth();
@@ -25,6 +32,9 @@ apiClient.interceptors.response.use(
         window.location.href = '/login';
       }
     }
+
+    const message = getApiErrorMessage(error);
+    error.apiMessage = message;
     return Promise.reject(error);
   }
 );

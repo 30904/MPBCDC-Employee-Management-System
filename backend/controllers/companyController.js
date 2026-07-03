@@ -1,12 +1,16 @@
 const Company = require('../models/Company');
 const User = require('../models/User');
-const { sendError, sendSuccess } = require('../utils/apiResponse');
+const { sendError, sendSuccess, sendPaginatedSuccess } = require('../utils/apiResponse');
+const { parsePagination, executePaginatedQuery } = require('../utils/pagination');
 const { ROLES } = require('../utils/roles');
 const { sanitizeUser } = require('./authController');
 
-async function listCompanies(_req, res) {
-  const companies = await Company.find().sort({ createdAt: -1 });
-  return sendSuccess(res, companies);
+async function listCompanies(req, res) {
+  const pagination = parsePagination(req.query);
+  const query = Company.find().sort({ createdAt: -1 });
+  const { docs, pagination: meta } = await executePaginatedQuery(query, pagination);
+
+  return sendPaginatedSuccess(res, docs, meta);
 }
 
 async function getCompany(req, res) {
@@ -63,8 +67,11 @@ async function updateCompany(req, res) {
 }
 
 async function listCompanyUsers(req, res) {
-  const users = await User.find({ companyId: req.params.id }).sort({ createdAt: -1 });
-  return sendSuccess(res, users.map(sanitizeUser));
+  const pagination = parsePagination(req.query);
+  const query = User.find({ companyId: req.params.id }).sort({ createdAt: -1 });
+  const { docs, pagination: meta } = await executePaginatedQuery(query, pagination);
+
+  return sendPaginatedSuccess(res, docs.map(sanitizeUser), meta);
 }
 
 async function createCompanyUser(req, res) {

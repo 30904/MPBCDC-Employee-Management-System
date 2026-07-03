@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import apiClient from '../api/apiClient.js';
+import { getApiErrorMessage, unwrapApiData } from '../api/response.js';
 import { setToken, setUser } from '../utils/auth.js';
 import './Login.css';
 
@@ -20,14 +21,14 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const { data } = await apiClient.post('/auth/login', { loginId, password });
-      const payload = data.data ?? data;
+      const response = await apiClient.post('/auth/login', { loginId, password });
+      const payload = unwrapApiData(response);
 
       setToken(payload.token);
       setUser(payload.user);
       navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.error || 'Invalid credentials. Please try again.');
+      setError(getApiErrorMessage(err) || 'Invalid credentials. Please try again.');
     } finally {
       setLoading(false);
     }
