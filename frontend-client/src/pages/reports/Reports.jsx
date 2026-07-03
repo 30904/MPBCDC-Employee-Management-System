@@ -4,11 +4,8 @@ export default function Reports() {
   return (
     <PlaceholderPage
       title="Reports"
-      subtitle="Role-filtered loan and leave reports"
-      endpoints={[
-        'GET /api/reports/loans/*',
-        'GET /api/reports/leaves/*',
-      ]}
+      subtitle="Reports will be displayed based on the logged-in user's role"
+      endpoints={['CLIENT_ADMIN', 'HR_OFFICER', 'FINANCE_OFFICER', 'REPORTING_MANAGER', 'REGIONAL_MANAGER']}
     />
   );
 }
