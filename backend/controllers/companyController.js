@@ -4,6 +4,11 @@ const { sendError, sendSuccess } = require('../utils/apiResponse');
 const { ROLES } = require('../utils/roles');
 const { sanitizeUser } = require('./authController');
 
+/**
+ * Platform-level controller — operates on `companies` (no companyId filter).
+ * User provisioning below is scoped via tenantFilter(companyId) / User.forTenant().
+ */
+
 async function listCompanies(_req, res) {
   const companies = await Company.find().sort({ createdAt: -1 });
   return sendSuccess(res, companies);
@@ -26,17 +31,19 @@ async function createCompany(req, res) {
     return sendError(res, 'Company name and code are required', 400);
   }
 
-  const existing = await Company.findOne({ code: code.trim().toUpperCase() });
+  const normalizedCode = code.trim().toUpperCase();
+  const existing = await Company.findOne({ code: normalizedCode });
   if (existing) {
     return sendError(res, 'Company code already exists', 409);
   }
 
   const company = await Company.create({
     name: name.trim(),
-    code: code.trim().toUpperCase(),
+    code: normalizedCode,
     contactEmail,
     contactPhone,
     moduleFlags,
+    status: 'Active',
   });
 
   return sendSuccess(res, company, 201);
@@ -63,7 +70,9 @@ async function updateCompany(req, res) {
 }
 
 async function listCompanyUsers(req, res) {
-  const users = await User.find({ companyId: req.params.id }).sort({ createdAt: -1 });
+  const companyId = req.params.id;
+  const users = await User.forTenant(companyId).find().sort({ createdAt: -1 });
+
   return sendSuccess(res, users.map(sanitizeUser));
 }
 
@@ -76,6 +85,10 @@ async function createCompanyUser(req, res) {
     return sendError(res, 'Company not found', 404);
   }
 
+  if (!company.isActive()) {
+    return sendError(res, 'Cannot provision users for an inactive company', 400);
+  }
+
   if (!loginId || !password || !Array.isArray(roles) || roles.length === 0) {
     return sendError(res, 'loginId, password, and roles are required', 400);
   }
@@ -85,18 +98,17 @@ async function createCompanyUser(req, res) {
     return sendError(res, 'Cannot assign SUPER_ADMIN to tenant user', 400);
   }
 
-  const existing = await User.findOne({ loginId: loginId.trim(), companyId });
+  const existing = await User.forTenant(companyId).findOne({ loginId: loginId.trim() });
   if (existing) {
     return sendError(res, 'Login ID already exists for this company', 409);
   }
 
   const passwordHash = await User.hashPassword(password);
 
-  const user = await User.create({
+  const user = await User.forTenant(companyId).create({
     loginId: loginId.trim(),
     passwordHash,
     roles,
-    companyId,
     status: 'Active',
   });
 

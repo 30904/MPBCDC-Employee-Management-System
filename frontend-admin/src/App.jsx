@@ -1,5 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import Layout from './components/Layout.jsx';
+import GuardedLayout from './routes/GuardedLayout.jsx';
 import PrivateRoutes from './routes/PrivateRoutes.jsx';
 import AuditLogs from './pages/AuditLogs.jsx';
 import CompanyDetail from './pages/companies/CompanyDetail.jsx';
@@ -15,12 +15,12 @@ export default function App() {
         <Route path="/login" element={<Login />} />
 
         <Route element={<PrivateRoutes />}>
-          <Route element={<Layout />}>
+          <Route element={<GuardedLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/companies" element={<CompanyList />} />
             <Route path="/companies/:id" element={<CompanyDetail />} />
             <Route path="/companies/:id/users" element={<CompanyUsers />} />
-            <Route path="/audit-logs" element={<AuditLogs />} />
+            <Route path="/audit-logs/*" element={<AuditLogs />} />
           </Route>
         </Route>
 

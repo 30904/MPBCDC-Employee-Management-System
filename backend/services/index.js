@@ -1,4 +1,11 @@
-// Business logic services (loanEligibilityService, leaveCalculationService, etc.)
-// will be added in module implementation phases.
+const loanEligibilityService = require('./loanEligibilityService');
+const loanScheduleService = require('./loanScheduleService');
+const leaveCalculationService = require('./leaveCalculationService');
+const leaveAccrualService = require('./leaveAccrualService');
 
-module.exports = {};
+module.exports = {
+  loanEligibilityService,
+  loanScheduleService,
+  leaveCalculationService,
+  leaveAccrualService,
+};

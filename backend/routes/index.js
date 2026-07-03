@@ -6,6 +6,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 const tenantResolver = require('../middleware/tenantResolver');
 const authorizeRoles = require('../middleware/authorizeRoles');
 const asyncHandler = require('../utils/asyncHandler');
+const User = require('../models/User');
 const { sendSuccess } = require('../utils/apiResponse');
 const { ROLES } = require('../utils/roles');
 
@@ -19,17 +20,22 @@ router.use('/auth', authRoutes);
 router.use('/companies', companyRoutes);
 router.use('/uploads', uploadRoutes);
 
-// Tenant-scoped placeholder — verifies auth + tenant middleware chain
+// Tenant-scoped — SUPER_ADMIN may pass x-company-id header via tenantResolver
 router.get(
   '/tenant/ping',
   authMiddleware,
   tenantResolver,
-  authorizeRoles(...Object.values(ROLES).filter((r) => r !== ROLES.SUPER_ADMIN)),
+  authorizeRoles(...Object.values(ROLES)),
   asyncHandler(async (req, res) => {
+    const tenantUserCount = await User.forTenant(req.companyId).countDocuments();
+
     sendSuccess(res, {
       message: 'Tenant context resolved',
       companyId: req.companyId,
       userId: req.user.id,
+      tenantUserCount,
+      actingAsTenant: Boolean(req.tenantCompany),
+      tenantName: req.tenantCompany?.name ?? null,
     });
   })
 );

@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { sendError, sendSuccess } = require('../utils/apiResponse');
 const { ROLES } = require('../utils/roles');
+const { belongsToTenant } = require('../utils/tenantQuery');
 
 function buildToken(user) {
   const payload = {
@@ -67,10 +68,20 @@ async function login(req, res) {
 }
 
 async function getMe(req, res) {
-  const user = await User.findById(req.user.id);
+  let user;
+
+  if (req.companyId) {
+    user = await User.forTenant(req.companyId).findById(req.user.id);
+  } else {
+    user = await User.findById(req.user.id);
+  }
 
   if (!user) {
     return sendError(res, 'User not found', 404);
+  }
+
+  if (req.companyId && user.companyId && !belongsToTenant(user, req.companyId)) {
+    return sendError(res, 'Access denied', 403);
   }
 
   return sendSuccess(res, sanitizeUser(user));

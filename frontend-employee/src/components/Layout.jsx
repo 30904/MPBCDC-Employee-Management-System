@@ -1,12 +1,13 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { clearAuth, getUser } from '../utils/auth.js';
-import { navItems } from '../utils/navItems.js';
+import { clearAuth, getCompanyId, getUser } from '../utils/auth.js';
+import { getNavItemsForUser } from '../utils/roleMenuMap.js';
 import './Layout.css';
 
 export default function Layout() {
   const navigate = useNavigate();
   const user = getUser();
-
+  const navItems = getNavItemsForUser(user);
+  const companyId = getCompanyId();
   function handleLogout() {
     clearAuth();
     navigate('/login');
@@ -19,7 +20,11 @@ export default function Layout() {
           <h1>MPBCDC</h1>
           <p>Employee Self-Service</p>
           {user?.employeeName && <span className="employee-name">{user.employeeName}</span>}
-        </div>
+          {companyId && (
+            <span className="company-badge" title="Tenant from JWT companyId">
+              Org: {companyId.slice(-6)}
+            </span>
+          )}        </div>
         <nav className="sidebar-nav">
           {navItems.map((item) => (
             <NavLink

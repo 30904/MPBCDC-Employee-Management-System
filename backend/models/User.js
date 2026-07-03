@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
-const { ALL_ROLES } = require('../utils/roles');
+const { ALL_ROLES, ROLES } = require('../utils/roles');
+const { companyIdField } = require('./shared/tenantFields');
+const { applyTenantIndexes } = require('./shared/applyTenantIndexes');
+const tenantScopedPlugin = require('./plugins/tenantScoped');
 
 const userSchema = new mongoose.Schema(
   {
@@ -29,11 +32,7 @@ const userSchema = new mongoose.Schema(
         message: 'At least one role is required',
       },
     },
-    companyId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Company',
-      default: null,
-    },
+    companyId: companyIdField(false),
     status: {
       type: String,
       enum: ['Active', 'Inactive'],
@@ -50,7 +49,20 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.index({ loginId: 1, companyId: 1 }, { unique: true });
+applyTenantIndexes(userSchema, 'users');
+userSchema.plugin(tenantScopedPlugin);
+
+userSchema.pre('validate', function enforceTenantRules() {
+  const isSuperAdmin = this.roles?.includes(ROLES.SUPER_ADMIN);
+
+  if (isSuperAdmin && this.companyId) {
+    this.invalidate('companyId', 'SUPER_ADMIN users must not belong to a company');
+  }
+
+  if (!isSuperAdmin && !this.companyId) {
+    this.invalidate('companyId', 'Tenant users must have a companyId');
+  }
+});
 
 userSchema.methods.comparePassword = async function comparePassword(plainPassword) {
   return bcrypt.compare(plainPassword, this.passwordHash);

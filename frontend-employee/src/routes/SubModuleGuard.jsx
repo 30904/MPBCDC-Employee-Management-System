@@ -1,16 +1,25 @@
-import { Navigate } from 'react-router-dom';
-import { getUser, hasRole } from '../utils/auth.js';
+import { Navigate, useLocation } from 'react-router-dom';
+import { getUser, hasAnyRole } from '../utils/auth.js';
 
 /**
- * Blocks employees from admin-only paths (e.g. /settings/*) even via direct URL.
+ * Guards ESS routes — redirects to dashboard if role lacks permission.
  */
-export default function SubModuleGuard({ roles = ['EMPLOYEE'], children }) {
+export default function SubModuleGuard({ roles, children }) {
   const user = getUser();
+  const { pathname } = useLocation();
 
-  const isAllowed = roles.some((role) => hasRole(user, role));
-  if (!isAllowed) {
-    return <Navigate to="/dashboard" replace state={{ error: 'access-denied' }} />;
+  if (!roles || roles.length === 0) {
+    return children;
+  }
+
+  if (!hasAnyRole(user, roles)) {
+    if (pathname === '/dashboard') {
+      return <Navigate to="/login" replace state={{ error: 'access-denied' }} />;
+    }
+
+    return <Navigate to="/dashboard" replace state={{ error: 'module-access-denied' }} />;
   }
 
   return children;
 }
+

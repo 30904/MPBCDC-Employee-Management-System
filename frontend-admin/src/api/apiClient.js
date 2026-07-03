@@ -1,5 +1,7 @@
 import axios from 'axios';
-import { clearAuth, getToken } from '../utils/auth.js';
+import { TENANT_HEADER } from '../constants/authStorage.js';
+import { clearAuth, getSelectedCompanyId, getToken } from '../utils/auth.js';
+import { stripCompanyIdFromAxiosConfig } from '../utils/stripCompanyId.js';
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
@@ -13,6 +15,14 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  const selectedCompanyId = getSelectedCompanyId();
+  if (selectedCompanyId) {
+    config.headers[TENANT_HEADER] = selectedCompanyId;
+  }
+
+  stripCompanyIdFromAxiosConfig(config);
+
   return config;
 });
 

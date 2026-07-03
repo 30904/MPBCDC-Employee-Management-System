@@ -26,36 +26,43 @@ export const menuSections = [
         to: '/settings/organization',
         label: 'Organization Setup',
         roles: ['CLIENT_ADMIN'],
+        pathPrefix: '/settings/organization',
       },
       {
         to: '/settings/employees',
         label: 'Employee Master',
         roles: ['CLIENT_ADMIN', 'HR_OFFICER'],
+        pathPrefix: '/settings/employees',
       },
       {
         to: '/settings/loan',
         label: 'Loan Setup',
         roles: ['CLIENT_ADMIN'],
+        pathPrefix: '/settings/loan',
       },
       {
         to: '/settings/leave',
         label: 'Leave Setup',
         roles: ['CLIENT_ADMIN'],
+        pathPrefix: '/settings/leave',
       },
       {
         to: '/settings/workflow',
         label: 'Approval Matrix',
         roles: ['CLIENT_ADMIN'],
+        pathPrefix: '/settings/workflow',
       },
       {
         to: '/settings/notifications',
         label: 'Notifications',
         roles: ['CLIENT_ADMIN'],
+        pathPrefix: '/settings/notifications',
       },
       {
         to: '/settings/users',
         label: 'Users & Roles',
         roles: ['CLIENT_ADMIN'],
+        pathPrefix: '/settings/users',
       },
     ],
   },
@@ -71,16 +78,19 @@ export const menuSections = [
           'FINANCE_OFFICER',
           'REPORTING_MANAGER',
         ],
+        pathPrefix: '/transactions/loans',
       },
       {
         to: '/transactions/leaves',
         label: 'Leave Transactions',
         roles: ['CLIENT_ADMIN', 'HR_OFFICER', 'REPORTING_MANAGER'],
+        pathPrefix: '/transactions/leaves',
       },
       {
-        to: '/service-records',
+        to: '/transactions/service-records',
         label: 'Service Records',
         roles: ['CLIENT_ADMIN', 'HR_OFFICER', 'REPORTING_MANAGER', 'REGIONAL_MANAGER'],
+        pathPrefix: '/transactions/service-records',
       },
     ],
   },
@@ -97,6 +107,7 @@ export const menuSections = [
           'REPORTING_MANAGER',
           'REGIONAL_MANAGER',
         ],
+        pathPrefix: '/reports',
       },
     ],
   },
@@ -113,11 +124,24 @@ export function getMenuForUser(user) {
     .filter((section) => section.items.length > 0);
 }
 
-export function getRouteRoles(path) {
+function isWithinRoutePrefix(pathname, pathPrefix) {
+  return pathname === pathPrefix || pathname.startsWith(`${pathPrefix}/`);
+}
+
+export function getRouteRoles(pathname) {
+  let prefixMatch = null;
+
   for (const section of menuSections) {
     for (const item of section.items) {
-      if (item.to === path) return item.roles;
+      if (item.to === pathname) {
+        return item.roles;
+      }
+
+      if (item.pathPrefix && isWithinRoutePrefix(pathname, item.pathPrefix)) {
+        prefixMatch = item.roles;
+      }
     }
   }
-  return null;
+
+  return prefixMatch;
 }

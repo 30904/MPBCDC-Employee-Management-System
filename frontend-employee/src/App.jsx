@@ -1,7 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import Layout from './components/Layout.jsx';
+import GuardedLayout from './routes/GuardedLayout.jsx';
 import PrivateRoutes from './routes/PrivateRoutes.jsx';
-import SubModuleGuard from './routes/SubModuleGuard.jsx';
+import SettingsBlockedRedirect from './routes/SettingsBlockedRedirect.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Documents from './pages/Documents.jsx';
 import Login from './pages/Login.jsx';
@@ -21,88 +21,21 @@ export default function App() {
         <Route path="/login" element={<Login />} />
 
         <Route element={<PrivateRoutes />}>
-          <Route element={<Layout />}>
+          <Route element={<GuardedLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
-
-            <Route
-              path="/leaves/apply"
-              element={
-                <SubModuleGuard>
-                  <ApplyLeave />
-                </SubModuleGuard>
-              }
-            />
-            <Route
-              path="/leaves/history"
-              element={
-                <SubModuleGuard>
-                  <LeaveHistory />
-                </SubModuleGuard>
-              }
-            />
-            <Route
-              path="/leaves/balance"
-              element={
-                <SubModuleGuard>
-                  <LeaveBalance />
-                </SubModuleGuard>
-              }
-            />
-
-            <Route
-              path="/loans/apply"
-              element={
-                <SubModuleGuard>
-                  <ApplyLoan />
-                </SubModuleGuard>
-              }
-            />
-            <Route
-              path="/loans/applied"
-              element={
-                <SubModuleGuard>
-                  <AppliedLoans />
-                </SubModuleGuard>
-              }
-            />
-            <Route
-              path="/loans/:id/schedule"
-              element={
-                <SubModuleGuard>
-                  <RepaymentSchedule />
-                </SubModuleGuard>
-              }
-            />
-
-            <Route
-              path="/profile"
-              element={
-                <SubModuleGuard>
-                  <Profile />
-                </SubModuleGuard>
-              }
-            />
-            <Route
-              path="/documents"
-              element={
-                <SubModuleGuard>
-                  <Documents />
-                </SubModuleGuard>
-              }
-            />
-            <Route
-              path="/notifications"
-              element={
-                <SubModuleGuard>
-                  <Notifications />
-                </SubModuleGuard>
-              }
-            />
+            <Route path="/leaves/apply" element={<ApplyLeave />} />
+            <Route path="/leaves/history" element={<LeaveHistory />} />
+            <Route path="/leaves/balance" element={<LeaveBalance />} />
+            <Route path="/loans/apply" element={<ApplyLoan />} />
+            <Route path="/loans/applied" element={<AppliedLoans />} />
+            <Route path="/loans/:id/schedule" element={<RepaymentSchedule />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/documents" element={<Documents />} />
+            <Route path="/notifications" element={<Notifications />} />
           </Route>
         </Route>
 
-        {/* Block admin-style paths — redirect to dashboard */}
-        <Route path="/settings/*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/settings/*" element={<SettingsBlockedRedirect />} />
 
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
