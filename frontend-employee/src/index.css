@@ -1,0 +1,95 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: #052e16;
+  background: #f0fdf4;
+}
+
+h2,
+h3 {
+  margin: 0 0 0.5rem;
+}
+
+p {
+  margin: 0;
+}
+
+code {
+  background: #dcfce7;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  font-size: 0.875em;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.page-header h2 {
+  font-size: 1.75rem;
+}
+
+.page-header p {
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.card h3 {
+  font-size: 1rem;
+  color: #14532d;
+}
+
+.card p {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.card-link {
+  margin-top: 1rem;
+}
+
+.placeholder-text {
+  color: #64748b;
+  margin-bottom: 1rem;
+}
+
+.endpoint-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #334155;
+}
+
+.endpoint-list li {
+  margin-bottom: 0.5rem;
+}
+
+.back-link {
+  margin-top: 1rem;
+}
+
+a {
+  color: #16a34a;
+}
