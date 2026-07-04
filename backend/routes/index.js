@@ -2,6 +2,8 @@ const express = require('express');
 const authRoutes = require('./authRoutes');
 const companyRoutes = require('./companyRoutes');
 const uploadRoutes = require('./uploadRoutes');
+const autoNumberRoutes = require('./autoNumberRoutes');
+const dateRoutes = require('./dateRoutes');
 const authMiddleware = require('../middleware/authMiddleware');
 const tenantResolver = require('../middleware/tenantResolver');
 const authorizeRoles = require('../middleware/authorizeRoles');
@@ -28,6 +30,24 @@ const RESPONSE_CONVENTION = {
   },
   error: { success: false, error: '<message>' },
   paginationQuery: '?page=1&limit=20',
+  autoNumbers: {
+    format: '{PREFIX}-{YEAR}-{#####}',
+    examples: ['LN-2026-00001', 'LV-2026-00001', 'SR-2026-00001'],
+    scope: 'Per companyId sequence',
+  },
+  fileUpload: {
+    contentType: 'multipart/form-data',
+    fieldName: 'file',
+    maxSizeMb: 5,
+    allowedTypes: ['application/pdf'],
+    endpoint: `${API_BASE_PATH}/uploads`,
+  },
+  dates: {
+    api: 'ISO 8601',
+    apiExamples: ['2026-07-04', '2026-07-04T10:30:00.000Z'],
+    ui: 'DD-MMM-YYYY',
+    uiExample: '04-Jul-2026',
+  },
 };
 
 const router = express.Router();
@@ -46,7 +66,17 @@ router.get('/', (_req, res) => {
         me: `${API_BASE_PATH}/auth/me`,
       },
       companies: `${API_BASE_PATH}/companies?page=1&limit=20`,
-      uploads: `${API_BASE_PATH}/uploads`,
+      uploads: {
+        formats: `${API_BASE_PATH}/uploads/formats`,
+        create: `${API_BASE_PATH}/uploads`,
+      },
+      autoNumbers: {
+        formats: `${API_BASE_PATH}/auto-numbers/formats`,
+        preview: `${API_BASE_PATH}/auto-numbers/preview/:prefix`,
+      },
+      dates: {
+        formats: `${API_BASE_PATH}/dates/formats`,
+      },
       tenantPing: `${API_BASE_PATH}/tenant/ping`,
     },
   });
@@ -59,6 +89,8 @@ router.get('/health', (_req, res) => {
 router.use('/auth', authRoutes);
 router.use('/companies', companyRoutes);
 router.use('/uploads', uploadRoutes);
+router.use('/auto-numbers', autoNumberRoutes);
+router.use('/dates', dateRoutes);
 
 // Tenant-scoped placeholder — verifies auth + tenant middleware chain
 router.get(

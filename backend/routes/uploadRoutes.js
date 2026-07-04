@@ -8,9 +8,15 @@ const asyncHandler = require('../utils/asyncHandler');
 const router = express.Router();
 
 /**
+ * GET /api/uploads/formats
+ * Public — documents multipart/form-data, PDF only, max 5MB convention.
+ */
+router.get('/formats', asyncHandler(uploadController.getUploadFormats));
+
+/**
  * POST /api/uploads
  * multipart/form-data, field: file, PDF only, max 5MB
- * Used by loan/leave attachment flows — stores under uploads/<companyId>/
+ * Stores under uploads/<companyId>/ for loan/leave attachments.
  */
 router.post(
   '/',

@@ -1,4 +1,6 @@
-// Business logic services (loanEligibilityService, leaveCalculationService, etc.)
-// will be added in module implementation phases.
+// Business logic services (loanEligibilityService, leaveCalculationService, autoNumberService, etc.)
+const autoNumberService = require('./autoNumberService');
 
-module.exports = {};
+module.exports = {
+  autoNumberService,
+};
