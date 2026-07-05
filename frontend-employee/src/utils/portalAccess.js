@@ -72,17 +72,30 @@ export function resolvePrivateRouteAccess({
 /**
  * Block client-portal settings URLs from the ESS app.
  */
-export function resolveSettingsRouteAccess({ token, pathname }) {
+export function resolveSettingsRouteAccess({
+  token,
+  user,
+  foreignSession = null,
+  pathname,
+}) {
   if (!pathname.startsWith(SETTINGS_PATH_PREFIX)) {
     return { outcome: 'allow' };
   }
 
-  if (!token) {
-    return { outcome: 'login' };
+  if (token) {
+    if (user && isEmployeePortalUser(user)) {
+      return {
+        outcome: 'dashboard',
+        state: { error: 'module-access-denied' },
+      };
+    }
+
+    return { outcome: 'access-denied', clearAuth: true };
   }
 
-  return {
-    outcome: 'dashboard',
-    state: { error: 'module-access-denied' },
-  };
+  if (foreignSession) {
+    return { outcome: 'access-denied', clearAuth: false };
+  }
+
+  return { outcome: 'login' };
 }

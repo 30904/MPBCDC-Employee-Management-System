@@ -84,12 +84,36 @@ record(
 // Employee cannot open client settings URLs directly.
 const settingsWhileLoggedIn = resolveSettingsRouteAccess({
   token: 'ess-jwt',
+  user: employeeUser(),
   pathname: '/settings/organization',
 });
 record(
   'Employee /settings/* redirects to dashboard with denial state',
   settingsWhileLoggedIn.outcome === 'dashboard' &&
     settingsWhileLoggedIn.state?.error === 'module-access-denied'
+);
+
+record(
+  'CLIENT_ADMIN foreign session on /settings/* redirects to login with access-denied',
+  resolveSettingsRouteAccess({
+    token: null,
+    user: null,
+    foreignSession: {
+      namespace: 'hrms_client_admin',
+      token: 'client-jwt',
+      user: clientAdminUser(),
+    },
+    pathname: '/settings/organization',
+  }).outcome === 'access-denied'
+);
+
+record(
+  'CLIENT_ADMIN token on /settings/* is rejected',
+  resolveSettingsRouteAccess({
+    token: 'ess-jwt',
+    user: clientAdminUser(),
+    pathname: '/settings/users',
+  }).outcome === 'access-denied'
 );
 
 record(
