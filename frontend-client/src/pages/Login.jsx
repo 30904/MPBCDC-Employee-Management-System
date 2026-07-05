@@ -14,6 +14,17 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   const accessDenied = location.state?.error === 'access-denied';
+  const denyReason = location.state?.reason;
+
+  function accessDeniedMessage() {
+    if (denyReason === 'no-company') {
+      return 'Your account is not linked to a company. Contact your Super Admin.';
+    }
+    if (denyReason === 'foreign-portal') {
+      return 'You are signed in to another MPBCDC portal. Use the client portal login below.';
+    }
+    return 'Access denied. This portal is for client roles only. Employees must use the ESS portal.';
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -40,11 +51,7 @@ export default function Login() {
         <h1>MPBCDC Client Portal</h1>
         <p className="login-subtitle">HR · Finance · Manager · Admin</p>
 
-        {accessDenied && (
-          <div className="login-error">
-            Access denied. This portal is for client roles only. Employees must use the ESS portal.
-          </div>
-        )}
+        {accessDenied && <div className="login-error">{accessDeniedMessage()}</div>}
         {error && <div className="login-error">{error}</div>}
 
         <label htmlFor="loginId">Login ID</label>

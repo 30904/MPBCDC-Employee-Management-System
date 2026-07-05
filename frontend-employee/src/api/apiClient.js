@@ -2,9 +2,18 @@ import axios from 'axios';
 import { API_BASE_PATH } from './config.js';
 import { getApiErrorMessage, isApiError } from './response.js';
 import { clearAuth, getToken } from '../utils/auth.js';
+import { stripCompanyIdFromAxiosConfig } from '../utils/stripCompanyId.js';
 
+<<<<<<< HEAD
 const apiClient = axios.create({
   baseURL: API_BASE_PATH,
+=======
+/**
+ * ESS API client — Bearer token only for tenant context (JWT companyId).
+ * Does not send x-company-id; companyId is never included in request bodies.
+ */
+const apiClient = axios.create({  baseURL: import.meta.env.VITE_API_URL || '/api',
+>>>>>>> origin/dev-sarah
   headers: {
     'Content-Type': 'application/json',
   },
@@ -15,6 +24,9 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  stripCompanyIdFromAxiosConfig(config);
+
   return config;
 });
 

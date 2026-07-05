@@ -1,18 +1,35 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { clearAuth, CLIENT_ROLES, getToken, getUser, hasAnyRole } from '../utils/auth.js';
+import { clearAuth, getToken, getUser, hasCompanyContext } from '../utils/auth.js';
+import { readForeignPortalSession, resolvePrivateRouteAccess } from '../utils/portalAccess.js';
 
 export default function PrivateRoutes() {
   const location = useLocation();
   const token = getToken();
   const user = getUser();
+  const foreignSession = readForeignPortalSession(localStorage);
+  const decision = resolvePrivateRouteAccess({
+    token,
+    user,
+    foreignSession,
+    hasCompanyContext: hasCompanyContext(),
+  });
 
-  if (!token) {
+  if (decision.outcome === 'login') {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  if (!user || !hasAnyRole(user, CLIENT_ROLES)) {
-    clearAuth();
-    return <Navigate to="/login" replace state={{ error: 'access-denied' }} />;
+  if (decision.outcome === 'access-denied') {
+    if (decision.clearAuth) {
+      clearAuth();
+    }
+
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ error: 'access-denied', reason: decision.reason }}
+      />
+    );
   }
 
   return <Outlet />;

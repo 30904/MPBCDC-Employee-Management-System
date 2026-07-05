@@ -1,0 +1,35 @@
+/**
+ * Barrel export for tenant-scoped models (backward compatible).
+ * Prefer direct imports: require('../models/LoanApplication')
+ */
+module.exports = {
+  MpbcdcEmployee: require('./MpbcdcEmployee'),
+  Department: require('./Department'),
+  Designation: require('./Designation'),
+  Grade: require('./Grade'),
+  Region: require('./Region'),
+  District: require('./District'),
+  LoanType: require('./LoanType'),
+  LoanEligibilityRule: require('./LoanEligibilityRule'),
+  LoanApplication: require('./LoanApplication'),
+  LoanApproval: require('./LoanApproval'),
+  LoanDisbursement: require('./LoanDisbursement'),
+  LoanEmiSchedule: require('./LoanEmiSchedule'),
+  LoanRecovery: require('./LoanRecovery'),
+  LoanClosure: require('./LoanClosure'),
+  LeaveType: require('./LeaveType'),
+  Holiday: require('./Holiday'),
+  LeaveAccrualRule: require('./LeaveAccrualRule'),
+  LeaveBalance: require('./LeaveBalance'),
+  LeaveApplication: require('./LeaveApplication'),
+  LeaveApproval: require('./LeaveApproval'),
+  PromotionHistory: require('./PromotionHistory'),
+  SalaryRevision: require('./SalaryRevision'),
+  TransferHistory: require('./TransferHistory'),
+  DisciplinaryCase: require('./DisciplinaryCase'),
+  EmployeeDocument: require('./EmployeeDocument'),
+  ApprovalMatrix: require('./ApprovalMatrix'),
+  NotificationTemplate: require('./NotificationTemplate'),
+  Notification: require('./Notification'),
+  AuditLog: require('./AuditLog'),
+};

@@ -1,6 +1,13 @@
-// Business logic services (loanEligibilityService, leaveCalculationService, autoNumberService, etc.)
 const autoNumberService = require('./autoNumberService');
+const loanEligibilityService = require('./loanEligibilityService');
+const loanScheduleService = require('./loanScheduleService');
+const leaveCalculationService = require('./leaveCalculationService');
+const leaveAccrualService = require('./leaveAccrualService');
 
 module.exports = {
   autoNumberService,
+  loanEligibilityService,
+  loanScheduleService,
+  leaveCalculationService,
+  leaveAccrualService,
 };

@@ -95,6 +95,56 @@ code {
   border: 1px solid #fde68a;
 }
 
+.primary-btn {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.sub-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.sub-nav-link {
+  padding: 0.5rem 0.875rem;
+  border-radius: 6px;
+  background: #e2e8f0;
+  color: #334155;
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.sub-nav-link:hover {
+  background: #cbd5e1;
+}
+
+.sub-nav-link.active {
+  background: #2563eb;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sub-nav {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 0.25rem;
+  }
+}
+
 a {
   color: #2563eb;
 }

@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { API_BASE_PATH } from './config.js';
 import { getApiErrorMessage, isApiError } from './response.js';
-import { clearAuth, getToken } from '../utils/auth.js';
+import { TENANT_HEADER } from '../constants/authStorage.js';
+import { clearAuth, getSelectedCompanyId, getToken } from '../utils/auth.js';
+import { stripCompanyIdFromAxiosConfig } from '../utils/stripCompanyId.js';
 
 const apiClient = axios.create({
   baseURL: API_BASE_PATH,
@@ -15,6 +17,14 @@ apiClient.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  const selectedCompanyId = getSelectedCompanyId();
+  if (selectedCompanyId) {
+    config.headers[TENANT_HEADER] = selectedCompanyId;
+  }
+
+  stripCompanyIdFromAxiosConfig(config);
+
   return config;
 });
 
