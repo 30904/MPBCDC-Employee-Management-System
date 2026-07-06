@@ -1,3 +1,4 @@
+import PageHeader from '../../../components/PageHeader.jsx';
 import PlaceholderPage from '../../../components/PlaceholderPage.jsx';
 
 export default function ApprovalMatrix() {

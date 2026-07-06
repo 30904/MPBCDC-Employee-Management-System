@@ -1,3 +1,4 @@
+
 import { Navigate, Route, Routes } from 'react-router-dom';
 import ModuleShell from '../../../components/ModuleShell.jsx';
 import LoanEligibilitySetup from './LoanEligibilitySetup.jsx';
@@ -28,5 +29,6 @@ export default function LoanSetup() {
         <Route path="workflow" element={<LoanWorkflowSetup />} />
       </Route>
     </Routes>
+
   );
 }

@@ -1,3 +1,4 @@
+
 import { Navigate, Route, Routes } from 'react-router-dom';
 import ModuleShell from '../../../components/ModuleShell.jsx';
 import DepartmentList from './DepartmentList.jsx';
@@ -34,5 +35,7 @@ export default function OrganizationSetup() {
         <Route path="districts" element={<DistrictList />} />
       </Route>
     </Routes>
+
+
   );
 }

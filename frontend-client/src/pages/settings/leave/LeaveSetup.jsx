@@ -1,3 +1,4 @@
+
 import { Navigate, Route, Routes } from 'react-router-dom';
 import ModuleShell from '../../../components/ModuleShell.jsx';
 import HolidayList from './HolidayList.jsx';
@@ -28,5 +29,6 @@ export default function LeaveSetup() {
         <Route path="accrual" element={<LeaveAccrualSetup />} />
       </Route>
     </Routes>
+
   );
 }

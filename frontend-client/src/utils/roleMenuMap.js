@@ -24,13 +24,13 @@ export const menuSections = [
     items: [
       {
         to: '/settings/organization',
-        label: 'Organization Setup',
+        label: 'Organization',
         roles: ['CLIENT_ADMIN'],
         pathPrefix: '/settings/organization',
       },
       {
         to: '/settings/employees',
-        label: 'Employee Master',
+        label: 'Employee Management',
         roles: ['CLIENT_ADMIN', 'HR_OFFICER'],
         pathPrefix: '/settings/employees',
       },
@@ -81,16 +81,46 @@ export const menuSections = [
         pathPrefix: '/transactions/loans',
       },
       {
+        to: '/transactions/loans/applications',
+        label: 'Loan Applications',
+        roles: ['HR_OFFICER', 'FINANCE_OFFICER', 'REPORTING_MANAGER'],
+      },
+      {
+        to: '/transactions/loans/approval-queue',
+        label: 'Loan Approval Queue',
+        roles: ['HR_OFFICER', 'FINANCE_OFFICER', 'REPORTING_MANAGER'],
+      },
+      {
+        to: '/transactions/loans/disbursement',
+        label: 'Loan Disbursement',
+        roles: ['HR_OFFICER', 'FINANCE_OFFICER', 'REPORTING_MANAGER'],
+      },
+      {
         to: '/transactions/leaves',
         label: 'Leave Transactions',
         roles: ['CLIENT_ADMIN', 'HR_OFFICER', 'REPORTING_MANAGER'],
         pathPrefix: '/transactions/leaves',
       },
       {
+        to: '/transactions/leaves/applications',
+        label: 'Leave Applications',
+        roles: ['HR_OFFICER', 'REPORTING_MANAGER'],
+      },
+      {
+        to: '/transactions/leaves/approval-queue',
+        label: 'Leave Approval Queue',
+        roles: ['HR_OFFICER', 'REPORTING_MANAGER'],
+      },
+      {
         to: '/transactions/service-records',
         label: 'Service Records',
         roles: ['CLIENT_ADMIN', 'HR_OFFICER', 'REPORTING_MANAGER', 'REGIONAL_MANAGER'],
         pathPrefix: '/transactions/service-records',
+      },
+      {
+        to: '/service-records/book',
+        label: 'Service Book',
+        roles: ['CLIENT_ADMIN', 'HR_OFFICER', 'REPORTING_MANAGER'],
       },
     ],
   },
