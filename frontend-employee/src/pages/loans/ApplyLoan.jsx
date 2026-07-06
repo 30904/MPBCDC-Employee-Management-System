@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/PageHeader.jsx';
-import { fetchActiveLoanTypes, previewLoanEligibility } from '../../api/loansApi.js';
+import { previewLoanEligibility, submitLoanApplication, fetchActiveLoanTypes } from '../../api/loansApi.js';
+import { uploadPdfFile } from '../../api/upload.js';
 import { getApiErrorMessage } from '../../api/response.js';
 
 function formatCurrency(amount) {
@@ -12,15 +14,21 @@ function formatCurrency(amount) {
 }
 
 export default function ApplyLoan() {
+  const navigate = useNavigate();
   const [loanTypes, setLoanTypes] = useState([]);
   const [selectedId, setSelectedId] = useState('');
   const [requestedAmount, setRequestedAmount] = useState('');
   const [requestedTenure, setRequestedTenure] = useState('');
+  const [purpose, setPurpose] = useState('');
+  const [attachmentFile, setAttachmentFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [previewError, setPreviewError] = useState('');
+  const [submitError, setSubmitError] = useState('');
+  const [submitSuccess, setSubmitSuccess] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -103,11 +111,59 @@ export default function ApplyLoan() {
     };
   }, [selectedId, requestedAmount, requestedTenure]);
 
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setSubmitError('');
+    setSubmitSuccess('');
+
+    if (!preview?.eligible) {
+      setSubmitError('Resolve eligibility issues before submitting.');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      let attachments = [];
+
+      if (attachmentFile) {
+        const uploaded = await uploadPdfFile(attachmentFile);
+        attachments = [
+          {
+            attachmentPath: uploaded.attachmentPath,
+            originalName: uploaded.originalName || attachmentFile.name,
+            url: uploaded.url,
+          },
+        ];
+      }
+
+      const application = await submitLoanApplication({
+        loanTypeId: selectedId,
+        requestedAmount: Number(requestedAmount),
+        requestedTenureMonths: Number(requestedTenure),
+        purpose: purpose.trim(),
+        attachments,
+      });
+
+      setSubmitSuccess(
+        `Application ${application.applicationNo} submitted successfully. Track status under My Loans.`
+      );
+
+      window.setTimeout(() => {
+        navigate('/loans/applied');
+      }, 1500);
+    } catch (err) {
+      setSubmitError(getApiErrorMessage(err, 'Failed to submit loan application.'));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <div>
       <PageHeader
         title="Apply Loan"
-        subtitle="Select a loan type and preview eligibility before submitting"
+        subtitle="Select a loan type, preview eligibility, and submit your application"
       />
 
       <div className="card">
@@ -121,7 +177,7 @@ export default function ApplyLoan() {
         )}
 
         {!loading && loanTypes.length > 0 && (
-          <form className="apply-loan-form">
+          <form className="apply-loan-form" onSubmit={handleSubmit}>
             <label>
               Loan Type
               <select
@@ -178,6 +234,26 @@ export default function ApplyLoan() {
               </label>
             </div>
 
+            <label>
+              Purpose (optional)
+              <textarea
+                rows={3}
+                maxLength={500}
+                value={purpose}
+                onChange={(e) => setPurpose(e.target.value)}
+                placeholder="Brief reason for the loan request"
+              />
+            </label>
+
+            <label>
+              Supporting document (PDF, max 5MB, optional)
+              <input
+                type="file"
+                accept=".pdf,application/pdf"
+                onChange={(e) => setAttachmentFile(e.target.files?.[0] ?? null)}
+              />
+            </label>
+
             {previewLoading && (
               <p className="placeholder-text">Checking eligibility…</p>
             )}
@@ -233,13 +309,15 @@ export default function ApplyLoan() {
               </div>
             )}
 
+            {submitError && <div className="form-error">{submitError}</div>}
+            {submitSuccess && <div className="form-success">{submitSuccess}</div>}
+
             <button
-              type="button"
+              type="submit"
               className="primary-btn"
-              disabled={!preview?.eligible}
-              title={preview?.eligible ? 'Submit will be enabled in the next phase' : 'Resolve eligibility issues first'}
+              disabled={!preview?.eligible || submitting}
             >
-              Submit Application (coming soon)
+              {submitting ? 'Submitting…' : 'Submit Application'}
             </button>
           </form>
         )}

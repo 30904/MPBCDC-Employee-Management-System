@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const User = require('../models/User');
+const Company = require('../models/Company');
 const { sendError, sendSuccess } = require('../utils/apiResponse');
 const { ROLES } = require('../utils/roles');
 const { belongsToTenant } = require('../utils/tenantQuery');
@@ -38,20 +39,77 @@ function buildToken(user) {
   });
 }
 
-function sanitizeUser(user) {
+function sanitizeUser(user, company = null) {
   return {
     id: user._id,
     loginId: user.loginId,
     roles: user.roles,
     companyId: user.companyId || null,
+    companyCode: company?.code ?? null,
+    companyName: company?.name ?? null,
     employeeId: user.employeeId || null,
     status: user.status,
     lastLoginAt: user.lastLoginAt,
   };
 }
 
+async function loadCompanyForUser(user) {
+  if (!user?.companyId) {
+    return null;
+  }
+
+  return Company.findById(user.companyId).select('name code status').lean();
+}
+
+async function resolveLoginUser(loginId, companyCode) {
+  const normalizedLoginId = String(loginId || '').trim();
+
+  if (!normalizedLoginId) {
+    return { error: sendErrorPayload('Login ID and password are required', 400) };
+  }
+
+  let candidates = await User.find({ loginId: normalizedLoginId }).select('+passwordHash');
+
+  if (!candidates.length) {
+    return { error: sendErrorPayload('Invalid credentials', 401) };
+  }
+
+  if (companyCode) {
+    const company = await Company.findOne({
+      code: String(companyCode).trim().toUpperCase(),
+      status: 'Active',
+    });
+
+    if (!company) {
+      return { error: sendErrorPayload('Company not found for the code provided', 404, 'COMPANY_NOT_FOUND') };
+    }
+
+    candidates = candidates.filter(
+      (candidate) => String(candidate.companyId) === String(company._id)
+    );
+
+    if (!candidates.length) {
+      return { error: sendErrorPayload('Invalid credentials', 401) };
+    }
+  } else if (candidates.length > 1) {
+    return {
+      error: sendErrorPayload(
+        'Multiple accounts share this login ID. Enter your company code.',
+        400,
+        'COMPANY_CODE_REQUIRED'
+      ),
+    };
+  }
+
+  return { user: candidates[0] };
+}
+
+function sendErrorPayload(message, status, code) {
+  return { message, status, code };
+}
+
 async function login(req, res) {
-  const { loginId, password } = req.body;
+  const { loginId, password, companyCode } = req.body;
 
   if (!loginId || !password) {
     return sendError(res, 'Login ID and password are required', 400);
@@ -71,38 +129,38 @@ async function login(req, res) {
     });
   }
 
-  try {
-    const user = await User.findOne({ loginId: loginId.trim() }).select('+passwordHash');
+  const resolved = await resolveLoginUser(loginId, companyCode);
 
-    if (!user) {
-      return sendError(res, 'Invalid credentials', 401);
-    }
-
-    if (user.status !== 'Active') {
-      return sendError(res, 'Account is inactive', 403);
-    }
-
-    const passwordMatch = await user.comparePassword(password);
-    if (!passwordMatch) {
-      return sendError(res, 'Invalid credentials', 401);
-    }
-
-    if (!user.roles.includes(ROLES.SUPER_ADMIN) && !user.companyId) {
-      return sendError(res, 'Tenant context missing for user', 403);
-    }
-
-    user.lastLoginAt = new Date();
-    await user.save();
-
-    const token = buildToken(user);
-
-    return sendSuccess(res, {
-      token,
-      user: sanitizeUser(user),
-    });
-  } catch (error) {
-    throw error;
+  if (resolved.error) {
+    const { message, status, code } = resolved.error;
+    return sendError(res, message, status, code);
   }
+
+  const user = resolved.user;
+
+  if (user.status !== 'Active') {
+    return sendError(res, 'Account is inactive', 403);
+  }
+
+  const passwordMatch = await user.comparePassword(password);
+  if (!passwordMatch) {
+    return sendError(res, 'Invalid credentials', 401);
+  }
+
+  if (!user.roles.includes(ROLES.SUPER_ADMIN) && !user.companyId) {
+    return sendError(res, 'Tenant context missing for user', 403);
+  }
+
+  user.lastLoginAt = new Date();
+  await user.save();
+
+  const company = await loadCompanyForUser(user);
+  const token = buildToken(user);
+
+  return sendSuccess(res, {
+    token,
+    user: sanitizeUser(user, company),
+  });
 }
 
 async function getMe(req, res) {
@@ -122,7 +180,9 @@ async function getMe(req, res) {
     return sendError(res, 'Access denied', 403);
   }
 
-  return sendSuccess(res, sanitizeUser(user));
+  const company = await loadCompanyForUser(user);
+
+  return sendSuccess(res, sanitizeUser(user, company));
 }
 
 module.exports = {

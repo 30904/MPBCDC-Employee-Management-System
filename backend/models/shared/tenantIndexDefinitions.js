@@ -42,18 +42,32 @@ const TENANT_COMPOUND_INDEXES = Object.freeze({
     { fields: { applicationId: 1, approvedAt: -1 } },
   ],
 
-  loan_disbursements: [{ fields: { disbursementNo: 1 }, options: { unique: true } }],
+  loan_disbursements: [
+    { fields: { disbursementNo: 1 }, options: { unique: true } },
+    { fields: { applicationId: 1 }, options: { unique: true } },
+    { fields: { loanNo: 1 } },
+  ],
 
   loan_emi_schedules: [
     { fields: { loanNo: 1, emiNo: 1 }, options: { unique: true } },
+    { fields: { applicationId: 1, emiNo: 1 }, options: { unique: true } },
     { fields: { loanNo: 1, dueDate: 1 } },
+    { fields: { applicationId: 1, dueDate: 1 } },
   ],
 
   loan_recoveries: [
     { fields: { loanNo: 1, payrollMonth: 1 }, options: { unique: true } },
+    { fields: { employeeId: 1, payrollMonth: 1 } },
+    { fields: { loanNo: 1, status: 1 } },
+    { fields: { recoveryDate: -1 } },
   ],
 
-  loan_closures: [{ fields: { closureNo: 1 }, options: { unique: true } }],
+  loan_closures: [
+    { fields: { closureNo: 1 }, options: { unique: true } },
+    { fields: { loanNo: 1 }, options: { unique: true } },
+    { fields: { employeeId: 1, closureDate: -1 } },
+    { fields: { closureDate: -1 } },
+  ],
 
   leave_types: [{ fields: { code: 1 }, options: { unique: true } }],
 

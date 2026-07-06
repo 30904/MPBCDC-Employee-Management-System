@@ -61,8 +61,12 @@ export default function Layout() {
             <span className="role-badge">{user.roles.join(', ')}</span>
           )}
           {companyId && (
-            <span className="company-badge" title="Tenant from JWT companyId">
-              Org: {companyId.slice(-6)}
+            <span
+              className="company-badge"
+              title={`Tenant ID: ${companyId}`}
+            >
+              {user?.companyName ? `${user.companyName}` : 'Organization'}
+              {user?.companyCode ? ` (${user.companyCode})` : ` · ${companyId.slice(-6)}`}
             </span>
           )}
         </div>

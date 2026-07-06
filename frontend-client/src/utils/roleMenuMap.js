@@ -86,13 +86,23 @@ export const menuSections = [
         roles: ['HR_OFFICER', 'FINANCE_OFFICER', 'REPORTING_MANAGER'],
       },
       {
-        to: '/transactions/loans/approval-queue',
+        to: '/transactions/loans/approvals',
         label: 'Loan Approval Queue',
         roles: ['HR_OFFICER', 'FINANCE_OFFICER', 'REPORTING_MANAGER'],
       },
       {
         to: '/transactions/loans/disbursement',
         label: 'Loan Disbursement',
+        roles: ['HR_OFFICER', 'FINANCE_OFFICER', 'REPORTING_MANAGER'],
+      },
+      {
+        to: '/transactions/loans/emi-schedule',
+        label: 'EMI Schedule',
+        roles: ['HR_OFFICER', 'FINANCE_OFFICER', 'REPORTING_MANAGER'],
+      },
+      {
+        to: '/transactions/loans/recovery',
+        label: 'Loan Recovery',
         roles: ['HR_OFFICER', 'FINANCE_OFFICER', 'REPORTING_MANAGER'],
       },
       {
@@ -107,7 +117,7 @@ export const menuSections = [
         roles: ['HR_OFFICER', 'REPORTING_MANAGER'],
       },
       {
-        to: '/transactions/leaves/approval-queue',
+        to: '/transactions/leaves/approvals',
         label: 'Leave Approval Queue',
         roles: ['HR_OFFICER', 'REPORTING_MANAGER'],
       },
@@ -159,19 +169,19 @@ function isWithinRoutePrefix(pathname, pathPrefix) {
 }
 
 export function getRouteRoles(pathname) {
-  let prefixMatch = null;
+  const roleSet = new Set();
 
   for (const section of menuSections) {
     for (const item of section.items) {
       if (item.to === pathname) {
-        return item.roles;
+        item.roles.forEach((role) => roleSet.add(role));
       }
 
       if (item.pathPrefix && isWithinRoutePrefix(pathname, item.pathPrefix)) {
-        prefixMatch = item.roles;
+        item.roles.forEach((role) => roleSet.add(role));
       }
     }
   }
 
-  return prefixMatch;
+  return roleSet.size > 0 ? [...roleSet] : null;
 }

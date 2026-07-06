@@ -9,7 +9,13 @@
     "seed:superadmin": "node scripts/seedSuperAdmin.js",
     "sync:indexes": "node scripts/syncTenantIndexes.js",
     "test:tenant-isolation": "node scripts/tenantIsolationTest.js",
-    "test:loan-eligibility": "node scripts/loanEligibilityTest.js"
+    "test:loan-eligibility": "node scripts/loanEligibilityTest.js",
+    "test:loan-workflow": "node scripts/loanWorkflowTest.js",
+    "test:loan-disbursement": "node scripts/loanDisbursementTest.js",
+    "test:loan-recovery-model": "node scripts/loanRecoveryModelTest.js",
+    "test:loan-recovery": "node scripts/loanRecoveryTest.js",
+    "test:loan-closure-model": "node scripts/loanClosureModelTest.js",
+    "seed:client-admin": "node scripts/resetClientAdminPassword.js"
   },
   "keywords": [],
   "author": "",

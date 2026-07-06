@@ -24,6 +24,7 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const [loginId, setLoginId] = useState('');
+  const [companyCode, setCompanyCode] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -47,7 +48,11 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await apiClient.post('/auth/login', { loginId, password });
+      const response = await apiClient.post('/auth/login', {
+        loginId,
+        password,
+        companyCode: companyCode.trim() || undefined,
+      });
       const payload = unwrapApiData(response);
 
       setToken(payload.token);
@@ -55,7 +60,6 @@ export default function Login() {
       navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
     } catch (err) {
       if (isAuthServiceUnavailable(err) && isMockCredentialMatch(loginId, password)) {
-        // Mock Login (temporary): auto-bypassed whenever real backend auth succeeds.
         setToken('mock-client-token');
         setUser({
           id: 'mock-client-user',
@@ -70,8 +74,18 @@ export default function Login() {
 
       if (isAuthServiceUnavailable(err)) {
         setError('Authentication service unavailable. Use Mock Login credentials for temporary access.');
+        return;
+      }
+
+      const apiError = err?.response?.data?.error;
+      const apiCode = err?.response?.data?.code;
+
+      if (apiCode === 'COMPANY_NOT_FOUND') {
+        setError('Company code not found. Check the code in Super Admin (e.g. ABCD1234 for TEST_COMPANY).');
+      } else if (apiCode === 'COMPANY_CODE_REQUIRED') {
+        setError('Enter your company code — this login ID exists in more than one organization.');
       } else {
-        setError(getApiErrorMessage(err) || 'Invalid credentials. Please try again.');
+        setError(apiError || getApiErrorMessage(err) || 'Invalid credentials. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -99,6 +113,21 @@ export default function Login() {
           required
           autoComplete="username"
         />
+
+        <label htmlFor="companyCode">Company code</label>
+        <input
+          id="companyCode"
+          type="text"
+          value={companyCode}
+          onChange={(e) => setCompanyCode(e.target.value)}
+          required
+          autoComplete="organization"
+          placeholder="e.g. ABCD1234"
+        />
+        <p className="login-hint">
+          Use the company code from Super Admin. Employee loan applications only appear for the
+          same organization.
+        </p>
 
         <label htmlFor="password">Password</label>
         <input

@@ -1,12 +1,24 @@
+const mongoose = require('mongoose');
 const createTenantModel = require('./createTenantModel');
 
 const LoanEmiSchedule = createTenantModel({
   modelName: 'LoanEmiSchedule',
   collection: 'loan_emi_schedules',
   fields: {
+    applicationId: { type: mongoose.Schema.Types.ObjectId, ref: 'LoanApplication' },
     loanNo: { type: String, trim: true },
-    emiNo: { type: Number },
+    emiNo: { type: Number, min: 1 },
     dueDate: { type: Date },
+    emiAmount: { type: Number, min: 0 },
+    principalComponent: { type: Number, min: 0 },
+    interestComponent: { type: Number, min: 0 },
+    outstandingBalance: { type: Number, min: 0 },
+    status: {
+      type: String,
+      trim: true,
+      enum: ['Pending', 'Paid', 'Skipped'],
+      default: 'Pending',
+    },
   },
 });
 

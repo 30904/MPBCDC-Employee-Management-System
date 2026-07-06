@@ -8,6 +8,10 @@ const leaveRoutes = require('./leaveRoutes');
 const loanRoutes = require('./loanRoutes');
 const loanTypeRoutes = require('./loanTypeRoutes');
 const loanEligibilityRuleRoutes = require('./loanEligibilityRuleRoutes');
+const approvalMatrixRoutes = require('./approvalMatrixRoutes');
+const loanApplicationRoutes = require('./loanApplicationRoutes');
+const loanDisbursementRoutes = require('./loanDisbursementRoutes');
+const loanRecoveryRoutes = require('./loanRecoveryRoutes');
 const authMiddleware = require('../middleware/authMiddleware');
 const tenantResolver = require('../middleware/tenantResolver');
 const authorizeRoles = require('../middleware/authorizeRoles');
@@ -84,6 +88,15 @@ router.get('/', (_req, res) => {
       },
       loanTypes: `${API_BASE_PATH}/loan-types?page=1&limit=20`,
       loanEligibilityRules: `${API_BASE_PATH}/loan-eligibility-rules?page=1&limit=20`,
+      approvalMatrices: `${API_BASE_PATH}/approval-matrices?module=LOAN`,
+      loanApplicationQueue: `${API_BASE_PATH}/loan-applications/queue`,
+      loanApplications: `${API_BASE_PATH}/loan-applications?page=1&limit=20`,
+      loanApplicationsMine: `${API_BASE_PATH}/loan-applications/mine?page=1&limit=20`,
+      loanApplicationSubmit: `${API_BASE_PATH}/loan-applications/:id/submit`,
+      loanDisbursements: `${API_BASE_PATH}/loan-disbursements`,
+      loanDisbursementsPending: `${API_BASE_PATH}/loan-disbursements/pending`,
+      loanRecoveries: `${API_BASE_PATH}/loan-recoveries`,
+      loanRecoveriesPending: `${API_BASE_PATH}/loan-recoveries/pending?payrollMonth=YYYY-MM`,
       loanPreviewEligibility: `${API_BASE_PATH}/loans/preview-eligibility?loanTypeId=&requestedAmount=&requestedTenure=`,
       tenantPing: `${API_BASE_PATH}/tenant/ping`,
     },
@@ -103,6 +116,10 @@ router.use('/leaves', leaveRoutes);
 router.use('/loans', loanRoutes);
 router.use('/loan-types', loanTypeRoutes);
 router.use('/loan-eligibility-rules', loanEligibilityRuleRoutes);
+router.use('/approval-matrices', approvalMatrixRoutes);
+router.use('/loan-applications', loanApplicationRoutes);
+router.use('/loan-disbursements', loanDisbursementRoutes);
+router.use('/loan-recoveries', loanRecoveryRoutes);
 
 // Tenant-scoped — SUPER_ADMIN may pass x-company-id header via tenantResolver
 router.get(

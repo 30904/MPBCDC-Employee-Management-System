@@ -113,6 +113,16 @@ code {
   font-size: 0.875rem;
 }
 
+.form-success {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  font-size: 0.875rem;
+}
+
 .apply-loan-form label {
   display: flex;
   flex-direction: column;
@@ -214,4 +224,51 @@ code {
 
 a {
   color: #16a34a;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.data-table th {
+  color: #475569;
+  font-weight: 600;
+}
+
+.btn-sm {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+  text-decoration: none;
+}
+
+.progress-bar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+
+.progress-bar__fill {
+  height: 100%;
+  background: #16a34a;
+}
+
+.back-link {
+  margin-top: 1rem;
 }

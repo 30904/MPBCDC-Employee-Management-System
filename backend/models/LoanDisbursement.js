@@ -1,9 +1,29 @@
+const mongoose = require('mongoose');
 const createTenantModel = require('./createTenantModel');
 
 const LoanDisbursement = createTenantModel({
   modelName: 'LoanDisbursement',
   collection: 'loan_disbursements',
-  fields: { disbursementNo: { type: String, trim: true } },
+  fields: {
+    disbursementNo: { type: String, trim: true },
+    applicationId: { type: mongoose.Schema.Types.ObjectId, ref: 'LoanApplication' },
+    loanNo: { type: String, trim: true },
+    employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'MpbcdcEmployee' },
+    loanTypeId: { type: mongoose.Schema.Types.ObjectId, ref: 'LoanType' },
+    disbursedAmount: { type: Number, min: 0 },
+    interestRate: { type: Number, min: 0 },
+    tenureMonths: { type: Number, min: 1 },
+    monthlyEmi: { type: Number, min: 0 },
+    disbursedAt: { type: Date },
+    firstEmiDate: { type: Date },
+    disbursedByUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    status: {
+      type: String,
+      trim: true,
+      enum: ['Active', 'Closed'],
+      default: 'Active',
+    },
+  },
 });
 
 module.exports = LoanDisbursement;

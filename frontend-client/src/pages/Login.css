@@ -77,3 +77,10 @@
   border-radius: 6px;
   font-size: 0.875rem;
 }
+
+.login-hint {
+  margin: 0.25rem 0 0;
+  color: #64748b;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
