@@ -2,6 +2,8 @@ const express = require('express');
 const authRoutes = require('./authRoutes');
 const companyRoutes = require('./companyRoutes');
 const uploadRoutes = require('./uploadRoutes');
+const leaveRoutes = require('./leaveRoutes');
+const loanRoutes = require('./loanRoutes');
 const authMiddleware = require('../middleware/authMiddleware');
 const tenantResolver = require('../middleware/tenantResolver');
 const authorizeRoles = require('../middleware/authorizeRoles');
@@ -18,6 +20,8 @@ router.get('/health', (_req, res) => {
 router.use('/auth', authRoutes);
 router.use('/companies', companyRoutes);
 router.use('/uploads', uploadRoutes);
+router.use('/leaves', leaveRoutes);
+router.use('/loans', loanRoutes);
 
 // Tenant-scoped placeholder — verifies auth + tenant middleware chain
 router.get(

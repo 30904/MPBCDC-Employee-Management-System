@@ -99,13 +99,11 @@ export default function App() {
               }
             />
           </Route>
+
+          <Route path="/settings/*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
-
-        {/* Block admin-style paths — redirect to dashboard */}
-        <Route path="/settings/*" element={<Navigate to="/dashboard" replace />} />
-
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
   );

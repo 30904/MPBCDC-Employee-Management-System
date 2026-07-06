@@ -2,8 +2,10 @@ const express = require('express');
 const uploadController = require('../controllers/uploadController');
 const authMiddleware = require('../middleware/authMiddleware');
 const tenantResolver = require('../middleware/tenantResolver');
+const authorizeRoles = require('../middleware/authorizeRoles');
 const { uploadSinglePdf, handleUploadError } = require('../middleware/uploadMiddleware');
 const asyncHandler = require('../utils/asyncHandler');
+const { ROLES } = require('../utils/roles');
 
 const router = express.Router();
 
@@ -16,6 +18,7 @@ router.post(
   '/',
   authMiddleware,
   tenantResolver,
+  authorizeRoles(...Object.values(ROLES).filter((role) => role !== ROLES.SUPER_ADMIN)),
   (req, res, next) => {
     uploadSinglePdf(req, res, (err) => {
       if (err) return handleUploadError(err, req, res, next);
