@@ -10,7 +10,7 @@ async function connectDB() {
   mongoose.set('strictQuery', true);
 
   await mongoose.connect(uri);
-  console.log('MongoDB connected');
+  console.log(`MongoDB connected (${mongoose.connection.db.databaseName})`);
 }
 
 module.exports = connectDB;
