@@ -30,6 +30,16 @@
   font-size: 0.875rem;
 }
 
+.login-mock-note {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.625rem;
+  background: #eff6ff;
+  color: #1e3a8a;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
 .login-card label {
   font-size: 0.875rem;
   font-weight: 500;
