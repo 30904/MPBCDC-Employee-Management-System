@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import ModuleSection from '../../../components/ModuleSection.jsx';
 
 export default function LoanDisbursement() {
@@ -14,16 +13,3 @@ export default function LoanDisbursement() {
     />
   );
 }
-=======
-import PlaceholderPage from '../../../components/PlaceholderPage.jsx';
-
-export default function LoanDisbursement() {
-  return (
-    <PlaceholderPage
-      title="Loan Disbursement"
-      subtitle="Approved loan disbursement tracking"
-      endpoints={['Loan disbursement placeholder']}
-    />
-  );
-}
->>>>>>> origin/dev-nicole
