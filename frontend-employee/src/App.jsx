@@ -33,12 +33,15 @@ export default function App() {
             <Route path="/documents" element={<Documents />} />
             <Route path="/notifications" element={<Notifications />} />
           </Route>
-        </Route>
 
+          <Route path="/settings/*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Route>
         <Route path="/settings/*" element={<SettingsBlockedRedirect />} />
 
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+<Route path="/" element={<Navigate to="/dashboard" replace />} />
+<Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
   );

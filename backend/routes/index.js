@@ -4,6 +4,8 @@ const companyRoutes = require('./companyRoutes');
 const uploadRoutes = require('./uploadRoutes');
 const autoNumberRoutes = require('./autoNumberRoutes');
 const dateRoutes = require('./dateRoutes');
+const leaveRoutes = require('./leaveRoutes');
+const loanRoutes = require('./loanRoutes');
 const authMiddleware = require('../middleware/authMiddleware');
 const tenantResolver = require('../middleware/tenantResolver');
 const authorizeRoles = require('../middleware/authorizeRoles');
@@ -92,6 +94,8 @@ router.use('/companies', companyRoutes);
 router.use('/uploads', uploadRoutes);
 router.use('/auto-numbers', autoNumberRoutes);
 router.use('/dates', dateRoutes);
+router.use('/leaves', leaveRoutes);
+router.use('/loans', loanRoutes);
 
 // Tenant-scoped — SUPER_ADMIN may pass x-company-id header via tenantResolver
 router.get(
