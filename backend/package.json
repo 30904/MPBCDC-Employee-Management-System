@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "seed:superadmin": "node scripts/seedSuperAdmin.js",
     "sync:indexes": "node scripts/syncTenantIndexes.js",
-    "test:tenant-isolation": "node scripts/tenantIsolationTest.js"
+    "test:tenant-isolation": "node scripts/tenantIsolationTest.js",
+    "test:loan-eligibility": "node scripts/loanEligibilityTest.js"
   },
   "keywords": [],
   "author": "",

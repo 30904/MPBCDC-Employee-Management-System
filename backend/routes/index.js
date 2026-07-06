@@ -6,6 +6,8 @@ const autoNumberRoutes = require('./autoNumberRoutes');
 const dateRoutes = require('./dateRoutes');
 const leaveRoutes = require('./leaveRoutes');
 const loanRoutes = require('./loanRoutes');
+const loanTypeRoutes = require('./loanTypeRoutes');
+const loanEligibilityRuleRoutes = require('./loanEligibilityRuleRoutes');
 const authMiddleware = require('../middleware/authMiddleware');
 const tenantResolver = require('../middleware/tenantResolver');
 const authorizeRoles = require('../middleware/authorizeRoles');
@@ -80,6 +82,9 @@ router.get('/', (_req, res) => {
       dates: {
         formats: `${API_BASE_PATH}/dates/formats`,
       },
+      loanTypes: `${API_BASE_PATH}/loan-types?page=1&limit=20`,
+      loanEligibilityRules: `${API_BASE_PATH}/loan-eligibility-rules?page=1&limit=20`,
+      loanPreviewEligibility: `${API_BASE_PATH}/loans/preview-eligibility?loanTypeId=&requestedAmount=&requestedTenure=`,
       tenantPing: `${API_BASE_PATH}/tenant/ping`,
     },
   });
@@ -96,6 +101,8 @@ router.use('/auto-numbers', autoNumberRoutes);
 router.use('/dates', dateRoutes);
 router.use('/leaves', leaveRoutes);
 router.use('/loans', loanRoutes);
+router.use('/loan-types', loanTypeRoutes);
+router.use('/loan-eligibility-rules', loanEligibilityRuleRoutes);
 
 // Tenant-scoped — SUPER_ADMIN may pass x-company-id header via tenantResolver
 router.get(

@@ -103,6 +103,50 @@ code {
   border: 1px solid #fde68a;
 }
 
+.form-error {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  font-size: 0.875rem;
+}
+
+.apply-loan-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.875rem;
+  color: #334155;
+  margin-bottom: 1rem;
+}
+
+.apply-loan-form select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+  max-width: 100%;
+}
+
+.loan-type-summary {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.loan-type-summary p {
+  margin-bottom: 0.35rem;
+  color: #14532d;
+}
+
+.loan-type-summary p:last-child {
+  margin-bottom: 0;
+}
+
 a {
   color: #16a34a;
 }
