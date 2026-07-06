@@ -2,15 +2,14 @@ const express = require('express');
 const companyController = require('../controllers/companyController');
 const asyncHandler = require('../utils/asyncHandler');
 const authMiddleware = require('../middleware/authMiddleware');
-const tenantResolver = require('../middleware/tenantResolver');
 const authorizeRoles = require('../middleware/authorizeRoles');
 const { validatePaginationMiddleware } = require('../utils/pagination');
 const { ROLES } = require('../utils/roles');
 
 const router = express.Router();
 
+// Platform routes — list/create/manage tenants; no x-company-id required.
 router.use(authMiddleware);
-router.use(tenantResolver);
 router.use(authorizeRoles(ROLES.SUPER_ADMIN));
 
 router.get('/', validatePaginationMiddleware, asyncHandler(companyController.listCompanies));
