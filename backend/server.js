@@ -36,14 +36,20 @@ app.use(errorHandler);
 async function startServer() {
   try {
     await connectDB();
-    app.listen(PORT, () => {
-      console.log(`MPBCDC API running on http://localhost:${PORT}`);
-      console.log(`Health check: http://localhost:${PORT}/api/health`);
-    });
   } catch (error) {
-    console.error('Failed to start server:', error.message);
-    process.exit(1);
+    if (process.env.NODE_ENV === 'production') {
+      console.error('Failed to start server:', error.message);
+      process.exit(1);
+    }
+
+    // Temporary development fallback: allow API startup without DB for mock login and UI flow testing.
+    console.warn('MongoDB unavailable. Starting API in development mode without DB:', error.message);
   }
+
+  app.listen(PORT, () => {
+    console.log(`MPBCDC API running on http://localhost:${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/api/health`);
+  });
 }
 
 startServer();

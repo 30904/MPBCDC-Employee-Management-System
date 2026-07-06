@@ -4,6 +4,21 @@ import apiClient from '../api/apiClient.js';
 import { setToken, setUser } from '../utils/auth.js';
 import './Login.css';
 
+const MOCK_LOGIN_ID = 'client@celeris.com';
+const MOCK_PASSWORD = '12345';
+
+function isAuthServiceUnavailable(error) {
+  if (!error.response) {
+    return true;
+  }
+
+  return error.response.status >= 500;
+}
+
+function isMockCredentialMatch(loginId, password) {
+  return loginId.trim().toLowerCase() === MOCK_LOGIN_ID && password === MOCK_PASSWORD;
+}
+
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -27,7 +42,25 @@ export default function Login() {
       setUser(payload.user);
       navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.error || 'Invalid credentials. Please try again.');
+      if (isAuthServiceUnavailable(err) && isMockCredentialMatch(loginId, password)) {
+        // Mock Login (temporary): auto-bypassed whenever real backend auth succeeds.
+        setToken('mock-client-token');
+        setUser({
+          id: 'mock-client-user',
+          loginId: MOCK_LOGIN_ID,
+          roles: ['CLIENT_ADMIN'],
+          companyId: 'mock-company',
+          mockLogin: true,
+        });
+        navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
+        return;
+      }
+
+      if (isAuthServiceUnavailable(err)) {
+        setError('Authentication service unavailable. Use Mock Login credentials for temporary access.');
+      } else {
+        setError(err.response?.data?.error || 'Invalid credentials. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -38,6 +71,9 @@ export default function Login() {
       <form className="login-card" onSubmit={handleSubmit}>
         <h1>MPBCDC Client Portal</h1>
         <p className="login-subtitle">HR · Finance · Manager · Admin</p>
+        <p className="login-mock-note">
+          Mock Login (temporary when backend is unavailable): {MOCK_LOGIN_ID} / {MOCK_PASSWORD}
+        </p>
 
         {accessDenied && (
           <div className="login-error">
