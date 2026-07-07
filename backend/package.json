@@ -7,6 +7,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "seed:superadmin": "node scripts/seedSuperAdmin.js",
+    "seed:roles": "node scripts/seedDefaultRoles.js",
     "db:ensure:companies": "node scripts/ensureCompaniesCollection.js",
     "db:ensure:users": "node scripts/ensureUsersCollection.js",
     "db:ensure:mpbcdc-employees": "node scripts/ensureMpbcdcEmployeesCollection.js",
