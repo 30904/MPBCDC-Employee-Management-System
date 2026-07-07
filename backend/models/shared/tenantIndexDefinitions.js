@@ -90,7 +90,11 @@ const TENANT_COMPOUND_INDEXES = Object.freeze({
     { fields: { fromDate: 1, toDate: 1 } },
   ],
 
-  leave_approvals: [{ fields: { applicationId: 1, approvedAt: -1 } }],
+  leave_approvals: [
+    { fields: { applicationId: 1, approverRole: 1 } },
+    { fields: { applicationId: 1, approvedAt: -1 } },
+    { fields: { applicationNo: 1 } },
+  ],
 
   promotion_histories: [{ fields: { employeeId: 1, createdAt: -1 } }],
 
