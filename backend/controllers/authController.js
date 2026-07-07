@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
+const Employee = require('../models/Employee');
 const User = require('../models/User');
 const Company = require('../models/Company');
 const { sendError, sendSuccess } = require('../utils/apiResponse');
@@ -131,10 +132,6 @@ async function login(req, res) {
   let user = null;
 
   for (const candidate of resolved.candidates) {
-    if (candidate.status !== 'Active') {
-      continue;
-    }
-
     const passwordMatch = await candidate.comparePassword(password);
     if (passwordMatch) {
       user = candidate;
@@ -144,6 +141,18 @@ async function login(req, res) {
 
   if (!user) {
     return sendError(res, 'Invalid credentials', 401);
+  }
+
+  if (user.status !== 'Active') {
+    return sendError(res, 'Account is inactive', 403);
+  }
+
+  if (user.employeeId) {
+    const employee = await Employee.findById(user.employeeId).select('status');
+
+    if (!employee || employee.status !== 'Active') {
+      return sendError(res, 'Employee account is inactive', 403);
+    }
   }
 
   if (!user.roles.includes(ROLES.SUPER_ADMIN) && !user.companyId) {

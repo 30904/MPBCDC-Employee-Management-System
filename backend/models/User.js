@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema(
     },
     employeeId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'MpbcdcEmployee',
+      ref: 'Employee',
       default: null,
     },
     roles: {

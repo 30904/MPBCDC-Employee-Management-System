@@ -4,14 +4,26 @@ import PrivateRoutes from './routes/PrivateRoutes.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Login from './pages/Login.jsx';
 import Reports from './pages/reports/Reports.jsx';
+import SubModuleGuard from './routes/SubModuleGuard.jsx';
 import ServiceRecords from './pages/service-records/ServiceRecords.jsx';
 import ServiceBook from './pages/service-records/ServiceBook.jsx';
 import EmployeeList from './pages/settings/employees/EmployeeList.jsx';
-import EmployeeCreate from './pages/settings/employees/EmployeeCreate.jsx';
-import EmployeeDetails from './pages/settings/employees/EmployeeDetails.jsx';
+import Departments from './pages/settings/organization/Departments.jsx';
+import Designations from './pages/settings/organization/Designations.jsx';
+import Grades from './pages/settings/organization/Grades.jsx';
+import Regions from './pages/settings/organization/Regions.jsx';
+import Districts from './pages/settings/organization/Districts.jsx';
 import LeaveSetup from './pages/settings/leave/LeaveSetup.jsx';
+import LeaveTypes from './pages/settings/leave/LeaveTypes.jsx';
+import HolidayCalendar from './pages/settings/leave/HolidayCalendar.jsx';
+import LeaveAccrual from './pages/settings/leave/LeaveAccrual.jsx';
+import LeaveWorkflow from './pages/settings/leave/LeaveWorkflow.jsx';
 import LoanSetup from './pages/settings/loan/LoanSetup.jsx';
+import LoanTypes from './pages/settings/loan/LoanTypes.jsx';
+import LoanEligibility from './pages/settings/loan/LoanEligibility.jsx';
+import LoanWorkflow from './pages/settings/loan/LoanWorkflow.jsx';
 import NotificationTemplates from './pages/settings/notifications/NotificationTemplates.jsx';
+import NotificationCenter from './pages/settings/notifications/NotificationCenter.jsx';
 import OrganizationSetup from './pages/settings/organization/OrganizationSetup.jsx';
 import UserManagement from './pages/settings/users/UserManagement.jsx';
 import RoleAssignment from './pages/settings/users/RoleAssignment.jsx';
@@ -29,16 +41,185 @@ export default function App() {
           <Route element={<GuardedLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
 
-            {/* Nicole's extra routes — must come BEFORE wildcard routes */}
-            <Route path="/settings/employees/create" element={<EmployeeCreate />} />
-            <Route path="/settings/employees/:id/edit" element={<EmployeeCreate mode="edit" />} />
-            <Route path="/settings/employees/:id" element={<EmployeeDetails />} />
-            <Route path="/settings/users/roles" element={<RoleAssignment />} />
+            <Route
+              path="/settings/organization"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <OrganizationSetup />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/organization/departments"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <Departments />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/organization/designations"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <Designations />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/organization/grades"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <Grades />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/organization/regions"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <Regions />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/organization/districts"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <Districts />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/loan"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <LoanSetup />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/loan/types"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <LoanTypes />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/loan/eligibility"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <LoanEligibility />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/loan/workflow"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <LoanWorkflow />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/leave"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <LeaveSetup />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/leave/types"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <LeaveTypes />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/leave/holidays"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <HolidayCalendar />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/leave/accrual"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <LeaveAccrual />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/leave/workflow"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <LeaveWorkflow />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/workflow"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <ApprovalMatrix />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/workflow/approval-matrix"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <ApprovalMatrix />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/notifications"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <NotificationTemplates />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/notifications/templates"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <NotificationCenter />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/users"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <UserManagement />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/users/roles"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN']}>
+                  <RoleAssignment />
+                </SubModuleGuard>
+              }
+            />
             <Route path="/service-records/book" element={<ServiceBook />} />
 
-            {/* Sarah's wildcard module routes */}
             <Route path="/settings/organization/*" element={<OrganizationSetup />} />
-            <Route path="/settings/employees/*" element={<EmployeeList />} />
+            <Route
+              path="/settings/employees/*"
+              element={
+                <SubModuleGuard roles={['CLIENT_ADMIN', 'HR_OFFICER']}>
+                  <EmployeeList />
+                </SubModuleGuard>
+              }
+            />
             <Route path="/settings/loan/*" element={<LoanSetup />} />
             <Route path="/settings/leave/*" element={<LeaveSetup />} />
             <Route path="/settings/workflow/*" element={<ApprovalMatrix />} />
