@@ -5,21 +5,6 @@ import { getApiErrorMessage, unwrapApiData } from '../api/response.js';
 import { setToken, setUser } from '../utils/auth.js';
 import './Login.css';
 
-const MOCK_LOGIN_ID = 'client@celeris.com';
-const MOCK_PASSWORD = '12345';
-
-function isAuthServiceUnavailable(error) {
-  if (!error.response) {
-    return true;
-  }
-
-  return error.response.status >= 500;
-}
-
-function isMockCredentialMatch(loginId, password) {
-  return loginId.trim().toLowerCase() === MOCK_LOGIN_ID && password === MOCK_PASSWORD;
-}
-
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -50,6 +35,7 @@ export default function Login() {
       const response = await apiClient.post('/auth/login', {
         loginId,
         password,
+        portal: 'client',
       });
       const payload = unwrapApiData(response);
 
@@ -57,24 +43,6 @@ export default function Login() {
       setUser(payload.user);
       navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
     } catch (err) {
-      if (isAuthServiceUnavailable(err) && isMockCredentialMatch(loginId, password)) {
-        setToken('mock-client-token');
-        setUser({
-          id: 'mock-client-user',
-          loginId: MOCK_LOGIN_ID,
-          roles: ['CLIENT_ADMIN'],
-          companyId: 'mock-company',
-          mockLogin: true,
-        });
-        navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
-        return;
-      }
-
-      if (isAuthServiceUnavailable(err)) {
-        setError('Authentication service unavailable. Use Mock Login credentials for temporary access.');
-        return;
-      }
-
       setError(
         err?.response?.data?.error ||
           getApiErrorMessage(err) ||
