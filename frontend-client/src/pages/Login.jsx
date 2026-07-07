@@ -24,7 +24,6 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const [loginId, setLoginId] = useState('');
-  const [companyCode, setCompanyCode] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -51,7 +50,6 @@ export default function Login() {
       const response = await apiClient.post('/auth/login', {
         loginId,
         password,
-        companyCode: companyCode.trim() || undefined,
       });
       const payload = unwrapApiData(response);
 
@@ -77,16 +75,11 @@ export default function Login() {
         return;
       }
 
-      const apiError = err?.response?.data?.error;
-      const apiCode = err?.response?.data?.code;
-
-      if (apiCode === 'COMPANY_NOT_FOUND') {
-        setError('Company code not found. Check the code in Super Admin (e.g. ABCD1234 for TEST_COMPANY).');
-      } else if (apiCode === 'COMPANY_CODE_REQUIRED') {
-        setError('Enter your company code — this login ID exists in more than one organization.');
-      } else {
-        setError(apiError || getApiErrorMessage(err) || 'Invalid credentials. Please try again.');
-      }
+      setError(
+        err?.response?.data?.error ||
+          getApiErrorMessage(err) ||
+          'Invalid credentials. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -113,21 +106,6 @@ export default function Login() {
           required
           autoComplete="username"
         />
-
-        <label htmlFor="companyCode">Company code</label>
-        <input
-          id="companyCode"
-          type="text"
-          value={companyCode}
-          onChange={(e) => setCompanyCode(e.target.value)}
-          required
-          autoComplete="organization"
-          placeholder="e.g. ABCD1234"
-        />
-        <p className="login-hint">
-          Use the company code from Super Admin. Employee loan applications only appear for the
-          same organization.
-        </p>
 
         <label htmlFor="password">Password</label>
         <input

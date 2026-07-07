@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const PROVISION_ROLES = ['CLIENT_ADMIN'];
+const PROVISION_ROLES = ['CLIENT_ADMIN', 'EMPLOYEE'];
 
 export default function UserForm({ onSubmit, onCancel }) {
   const [loginId, setLoginId] = useState('');

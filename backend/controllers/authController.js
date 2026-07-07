@@ -61,7 +61,7 @@ async function loadCompanyForUser(user) {
   return Company.findById(user.companyId).select('name code status').lean();
 }
 
-async function resolveLoginUser(loginId, companyCode) {
+async function resolveLoginCandidates(loginId, companyCode) {
   const normalizedLoginId = String(loginId || '').trim();
 
   if (!normalizedLoginId) {
@@ -91,17 +91,9 @@ async function resolveLoginUser(loginId, companyCode) {
     if (!candidates.length) {
       return { error: sendErrorPayload('Invalid credentials', 401) };
     }
-  } else if (candidates.length > 1) {
-    return {
-      error: sendErrorPayload(
-        'Multiple accounts share this login ID. Enter your company code.',
-        400,
-        'COMPANY_CODE_REQUIRED'
-      ),
-    };
   }
 
-  return { user: candidates[0] };
+  return { candidates };
 }
 
 function sendErrorPayload(message, status, code) {
@@ -129,21 +121,28 @@ async function login(req, res) {
     });
   }
 
-  const resolved = await resolveLoginUser(loginId, companyCode);
+  const resolved = await resolveLoginCandidates(loginId, companyCode);
 
   if (resolved.error) {
     const { message, status, code } = resolved.error;
     return sendError(res, message, status, code);
   }
 
-  const user = resolved.user;
+  let user = null;
 
-  if (user.status !== 'Active') {
-    return sendError(res, 'Account is inactive', 403);
+  for (const candidate of resolved.candidates) {
+    if (candidate.status !== 'Active') {
+      continue;
+    }
+
+    const passwordMatch = await candidate.comparePassword(password);
+    if (passwordMatch) {
+      user = candidate;
+      break;
+    }
   }
 
-  const passwordMatch = await user.comparePassword(password);
-  if (!passwordMatch) {
+  if (!user) {
     return sendError(res, 'Invalid credentials', 401);
   }
 
