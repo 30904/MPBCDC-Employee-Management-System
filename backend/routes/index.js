@@ -1,6 +1,7 @@
 const express = require('express');
 const authRoutes = require('./authRoutes');
 const companyRoutes = require('./companyRoutes');
+const departmentRoutes = require('./departmentRoutes');
 const employeeRoutes = require('./employeeRoutes');
 const uploadRoutes = require('./uploadRoutes');
 const leaveRoutes = require('./leaveRoutes');
@@ -20,6 +21,7 @@ router.get('/health', (_req, res) => {
 
 router.use('/auth', authRoutes);
 router.use('/companies', companyRoutes);
+router.use('/departments', departmentRoutes);
 router.use('/employees', employeeRoutes);
 router.use('/uploads', uploadRoutes);
 router.use('/leaves', leaveRoutes);

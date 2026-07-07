@@ -7,7 +7,7 @@ import Login from './pages/Login.jsx';
 import Reports from './pages/reports/Reports.jsx';
 import EmployeeForm from './pages/settings/employees/EmployeeForm.jsx';
 import EmployeeDetails from './pages/settings/employees/EmployeeDetails.jsx';
-import Departments from './pages/settings/organization/Departments.jsx';
+import DepartmentMaster from './pages/settings/organization/DepartmentMaster.jsx';
 import Designations from './pages/settings/organization/Designations.jsx';
 import Districts from './pages/settings/organization/Districts.jsx';
 import Grades from './pages/settings/organization/Grades.jsx';
@@ -60,7 +60,7 @@ export default function App() {
               path="/settings/organization/departments"
               element={
                 <SubModuleGuard roles={['CLIENT_ADMIN']}>
-                  <Departments />
+                  <DepartmentMaster />
                 </SubModuleGuard>
               }
             />
