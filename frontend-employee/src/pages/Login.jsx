@@ -24,6 +24,7 @@ export default function Login() {
       const response = await apiClient.post('/auth/login', {
         loginId: employeeCode,
         password,
+        portal: 'employee',
       });
       const payload = unwrapApiData(response);
 
