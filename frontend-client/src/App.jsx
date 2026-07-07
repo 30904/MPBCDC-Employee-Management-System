@@ -19,9 +19,6 @@ import HolidayCalendar from './pages/settings/leave/HolidayCalendar.jsx';
 import LeaveAccrual from './pages/settings/leave/LeaveAccrual.jsx';
 import LeaveWorkflow from './pages/settings/leave/LeaveWorkflow.jsx';
 import LoanSetup from './pages/settings/loan/LoanSetup.jsx';
-import LoanTypes from './pages/settings/loan/LoanTypes.jsx';
-import LoanEligibility from './pages/settings/loan/LoanEligibility.jsx';
-import LoanWorkflow from './pages/settings/loan/LoanWorkflow.jsx';
 import NotificationTemplates from './pages/settings/notifications/NotificationTemplates.jsx';
 import NotificationCenter from './pages/settings/notifications/NotificationCenter.jsx';
 import OrganizationSetup from './pages/settings/organization/OrganizationSetup.jsx';
@@ -86,38 +83,6 @@ export default function App() {
               element={
                 <SubModuleGuard roles={['CLIENT_ADMIN']}>
                   <Districts />
-                </SubModuleGuard>
-              }
-            />
-            <Route
-              path="/settings/loan"
-              element={
-                <SubModuleGuard roles={['CLIENT_ADMIN']}>
-                  <LoanSetup />
-                </SubModuleGuard>
-              }
-            />
-            <Route
-              path="/settings/loan/types"
-              element={
-                <SubModuleGuard roles={['CLIENT_ADMIN']}>
-                  <LoanTypes />
-                </SubModuleGuard>
-              }
-            />
-            <Route
-              path="/settings/loan/eligibility"
-              element={
-                <SubModuleGuard roles={['CLIENT_ADMIN']}>
-                  <LoanEligibility />
-                </SubModuleGuard>
-              }
-            />
-            <Route
-              path="/settings/loan/workflow"
-              element={
-                <SubModuleGuard roles={['CLIENT_ADMIN']}>
-                  <LoanWorkflow />
                 </SubModuleGuard>
               }
             />
