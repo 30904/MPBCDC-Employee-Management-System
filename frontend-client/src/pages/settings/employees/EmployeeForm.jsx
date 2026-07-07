@@ -34,6 +34,8 @@ const initialFormState = {
   employmentType: '',
   status: 'Active',
   grossSalary: '',
+  password: '',
+  confirmPassword: '',
 };
 
 export default function EmployeeForm({ mode = 'create' }) {
@@ -133,22 +135,38 @@ export default function EmployeeForm({ mode = 'create' }) {
     setSaving(true);
     setError('');
 
+    if (!isEditMode && formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match.');
+      setSaving(false);
+      return;
+    }
+
     try {
       const payload = {
         ...formData,
         grossSalary: formData.grossSalary === '' ? '' : Number(formData.grossSalary),
       };
 
+      delete payload.password;
+      delete payload.confirmPassword;
+
       if (isEditMode && !payload.aadhaarNumber) {
         delete payload.aadhaarNumber;
       }
 
+      if (!isEditMode && managerOptions.length === 0) {
+        delete payload.reportingManager;
+      }
+
       const request = isEditMode
         ? apiClient.put(`/employees/${id}`, payload)
-        : apiClient.post('/employees', payload);
+        : apiClient.post('/employees/with-account', {
+            ...payload,
+            password: formData.password,
+          });
 
       const { data } = await request;
-      const employee = data.data;
+      const employee = isEditMode ? data.data : data.data.employee;
       navigate(`/settings/employees/${employee.id}`, { replace: true });
     } catch (err) {
       setError(err.response?.data?.error || 'Unable to save employee record.');
@@ -183,7 +201,7 @@ export default function EmployeeForm({ mode = 'create' }) {
         <p className="placeholder-text">
           {isEditMode
             ? 'Update the employee master record. Aadhaar is masked in the UI and remains unchanged if left blank.'
-            : 'Create a new employee master record. Reporting manager must be another employee in the same company.'}
+            : 'Create a new employee master record and ESS login. Employee code is used as the login ID.'}
         </p>
 
         {error && <div className="alert alert-warning">{error}</div>}
@@ -304,8 +322,15 @@ export default function EmployeeForm({ mode = 'create' }) {
 
           <label className="form-field">
             <span>Reporting Manager</span>
-            <select name="reportingManager" value={formData.reportingManager} onChange={handleChange} required>
-              <option value="">Select employee</option>
+            <select
+              name="reportingManager"
+              value={formData.reportingManager}
+              onChange={handleChange}
+              required={managerOptions.length > 0}
+            >
+              <option value="">
+                {managerOptions.length > 0 ? 'Select employee' : 'Not required for first employee'}
+              </option>
               {managerOptions.map((employee) => (
                 <option key={employee.id} value={employee.id}>
                   {employee.employeeCode} - {employee.employeeName}
@@ -337,6 +362,34 @@ export default function EmployeeForm({ mode = 'create' }) {
             <span>Gross Salary</span>
             <input type="number" min="0" name="grossSalary" value={formData.grossSalary} onChange={handleChange} required />
           </label>
+
+          {!isEditMode && (
+            <>
+              <label className="form-field">
+                <span>ESS Password</span>
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  minLength={8}
+                />
+              </label>
+
+              <label className="form-field">
+                <span>Confirm Password</span>
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                  minLength={8}
+                />
+              </label>
+            </>
+          )}
 
           <div className="form-actions">
             <button type="submit" className="primary-btn" disabled={saving}>
