@@ -8,7 +8,7 @@ const { validatePaginationMiddleware } = require('../utils/pagination');
 const { ROLES } = require('../utils/roles');
 const loanDisbursementController = require('../controllers/loanDisbursementController');
 
-const DISBURSEMENT_ROLES = [ROLES.CLIENT_ADMIN, ROLES.FINANCE_OFFICER];
+const DISBURSEMENT_ROLES = [ROLES.CLIENT_ADMIN];
 
 const router = express.Router();
 
@@ -36,7 +36,7 @@ router.post(
 
 router.get(
   '/schedule/:applicationId',
-  authorizeRoles(ROLES.CLIENT_ADMIN, ROLES.FINANCE_OFFICER, ROLES.EMPLOYEE),
+  authorizeRoles(ROLES.CLIENT_ADMIN, ROLES.EMPLOYEE),
   assertEmployeeSelfScope,
   asyncHandler(loanDisbursementController.getSchedule)
 );

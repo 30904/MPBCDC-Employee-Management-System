@@ -1,6 +1,11 @@
+import { ROLES } from '../constants/roles.js';
+
+const ADMIN = ROLES.CLIENT_ADMIN;
+
 /**
- * Role → menu visibility map (Appendix A, implementation guide).
- * Sidebar is built from this — do not rely on hiding links alone.
+ * Role → menu visibility map (Client portal).
+ * Only three official user roles exist: Super Admin, Admin, Employee.
+ * This portal is for Admin (CLIENT_ADMIN) only.
  */
 export const menuSections = [
   {
@@ -9,60 +14,13 @@ export const menuSections = [
       {
         to: '/dashboard',
         label: 'Dashboard',
-        roles: [
-          'CLIENT_ADMIN',
-          'HR_OFFICER',
-          'FINANCE_OFFICER',
-          'REPORTING_MANAGER',
-          'REGIONAL_MANAGER',
-        ],
-      },
-    ],
-  },
-  {
-    label: 'Settings',
-    items: [
-      {
-        to: '/settings/organization',
-        label: 'Organization',
-        roles: ['CLIENT_ADMIN'],
-        pathPrefix: '/settings/organization',
+        roles: [ADMIN],
       },
       {
-        to: '/settings/employees',
-        label: 'Employee Management',
-        roles: ['CLIENT_ADMIN', 'HR_OFFICER'],
-        pathPrefix: '/settings/employees',
-      },
-      {
-        to: '/settings/loan',
-        label: 'Loan Setup',
-        roles: ['CLIENT_ADMIN'],
-        pathPrefix: '/settings/loan',
-      },
-      {
-        to: '/settings/leave',
-        label: 'Leave Setup',
-        roles: ['CLIENT_ADMIN'],
-        pathPrefix: '/settings/leave',
-      },
-      {
-        to: '/settings/workflow',
-        label: 'Approval Matrix',
-        roles: ['CLIENT_ADMIN'],
-        pathPrefix: '/settings/workflow',
-      },
-      {
-        to: '/settings/notifications',
-        label: 'Notifications',
-        roles: ['CLIENT_ADMIN'],
-        pathPrefix: '/settings/notifications',
-      },
-      {
-        to: '/settings/users',
-        label: 'Users & Roles',
-        roles: ['CLIENT_ADMIN'],
-        pathPrefix: '/settings/users',
+        to: '/settings',
+        label: 'Settings',
+        roles: [ADMIN],
+        pathPrefix: '/settings',
       },
     ],
   },
@@ -72,65 +30,25 @@ export const menuSections = [
       {
         to: '/transactions/loans',
         label: 'Loan Transactions',
-        roles: [
-          'CLIENT_ADMIN',
-          'HR_OFFICER',
-          'FINANCE_OFFICER',
-          'REPORTING_MANAGER',
-        ],
+        roles: [ADMIN],
         pathPrefix: '/transactions/loans',
-      },
-      {
-        to: '/transactions/loans/applications',
-        label: 'Loan Applications',
-        roles: ['HR_OFFICER', 'FINANCE_OFFICER', 'REPORTING_MANAGER'],
-      },
-      {
-        to: '/transactions/loans/approvals',
-        label: 'Loan Approval Queue',
-        roles: ['HR_OFFICER', 'FINANCE_OFFICER', 'REPORTING_MANAGER'],
-      },
-      {
-        to: '/transactions/loans/disbursement',
-        label: 'Loan Disbursement',
-        roles: ['HR_OFFICER', 'FINANCE_OFFICER', 'REPORTING_MANAGER'],
-      },
-      {
-        to: '/transactions/loans/emi-schedule',
-        label: 'EMI Schedule',
-        roles: ['HR_OFFICER', 'FINANCE_OFFICER', 'REPORTING_MANAGER'],
-      },
-      {
-        to: '/transactions/loans/recovery',
-        label: 'Loan Recovery',
-        roles: ['HR_OFFICER', 'FINANCE_OFFICER', 'REPORTING_MANAGER'],
       },
       {
         to: '/transactions/leaves',
         label: 'Leave Transactions',
-        roles: ['CLIENT_ADMIN', 'HR_OFFICER', 'REPORTING_MANAGER'],
+        roles: [ADMIN],
         pathPrefix: '/transactions/leaves',
-      },
-      {
-        to: '/transactions/leaves/applications',
-        label: 'Leave Applications',
-        roles: ['HR_OFFICER', 'REPORTING_MANAGER'],
-      },
-      {
-        to: '/transactions/leaves/approvals',
-        label: 'Leave Approval Queue',
-        roles: ['HR_OFFICER', 'REPORTING_MANAGER'],
       },
       {
         to: '/transactions/service-records',
         label: 'Service Records',
-        roles: ['CLIENT_ADMIN', 'HR_OFFICER', 'REPORTING_MANAGER', 'REGIONAL_MANAGER'],
+        roles: [ADMIN],
         pathPrefix: '/transactions/service-records',
       },
       {
         to: '/service-records/book',
         label: 'Service Book',
-        roles: ['CLIENT_ADMIN', 'HR_OFFICER', 'REPORTING_MANAGER'],
+        roles: [ADMIN],
       },
     ],
   },
@@ -140,16 +58,29 @@ export const menuSections = [
       {
         to: '/reports',
         label: 'Reports',
-        roles: [
-          'CLIENT_ADMIN',
-          'HR_OFFICER',
-          'FINANCE_OFFICER',
-          'REPORTING_MANAGER',
-          'REGIONAL_MANAGER',
-        ],
+        roles: [ADMIN],
         pathPrefix: '/reports',
       },
     ],
+  },
+];
+
+export const settingsRouteRules = [
+  {
+    pathPrefix: '/settings/employees',
+    roles: [ADMIN],
+  },
+  {
+    pathPrefix: '/settings/loan',
+    roles: [ADMIN],
+  },
+  {
+    pathPrefix: '/settings/leave',
+    roles: [ADMIN],
+  },
+  {
+    pathPrefix: '/settings',
+    roles: [ADMIN],
   },
 ];
 
@@ -168,20 +99,41 @@ function isWithinRoutePrefix(pathname, pathPrefix) {
   return pathname === pathPrefix || pathname.startsWith(`${pathPrefix}/`);
 }
 
-export function getRouteRoles(pathname) {
-  const roleSet = new Set();
+function collectRouteRules(pathname) {
+  const rules = [];
 
   for (const section of menuSections) {
     for (const item of section.items) {
       if (item.to === pathname) {
-        item.roles.forEach((role) => roleSet.add(role));
+        rules.push({ pathPrefix: item.to, roles: item.roles });
       }
 
       if (item.pathPrefix && isWithinRoutePrefix(pathname, item.pathPrefix)) {
-        item.roles.forEach((role) => roleSet.add(role));
+        rules.push({ pathPrefix: item.pathPrefix, roles: item.roles });
       }
     }
   }
 
-  return roleSet.size > 0 ? [...roleSet] : null;
+  for (const rule of settingsRouteRules) {
+    if (isWithinRoutePrefix(pathname, rule.pathPrefix)) {
+      rules.push(rule);
+    }
+  }
+
+  return rules;
+}
+
+export function getRouteRoles(pathname) {
+  const rules = collectRouteRules(pathname);
+
+  if (!rules.length) {
+    return null;
+  }
+
+  const roles = new Set();
+  rules.forEach((rule) => {
+    rule.roles.forEach((role) => roles.add(role));
+  });
+
+  return [...roles];
 }

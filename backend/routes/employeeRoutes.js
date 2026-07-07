@@ -10,7 +10,7 @@ const router = express.Router();
 
 router.use(authMiddleware);
 router.use(tenantResolver);
-router.use(authorizeRoles(ROLES.CLIENT_ADMIN, ROLES.HR_OFFICER));
+router.use(authorizeRoles(ROLES.CLIENT_ADMIN));
 
 router.post('/with-account', authorizeRoles(ROLES.CLIENT_ADMIN), asyncHandler(employeeController.createEmployeeWithAccount));
 router.get('/', asyncHandler(employeeController.listEmployees));

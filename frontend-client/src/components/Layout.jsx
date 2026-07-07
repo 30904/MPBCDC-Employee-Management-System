@@ -4,6 +4,16 @@ import { clearAuth, getCompanyId, getUser } from '../utils/auth.js';
 import { getMenuForUser } from '../utils/roleMenuMap.js';
 import './Layout.css';
 
+const ROLE_LABELS = {
+  CLIENT_ADMIN: 'Admin',
+  SUPER_ADMIN: 'Super Admin',
+  EMPLOYEE: 'Employee',
+};
+
+function formatRoleLabel(role) {
+  return ROLE_LABELS[role] ?? role;
+}
+
 function isNavItemActive(pathname, item, isActive) {
   if (isActive) {
     return true;
@@ -58,7 +68,9 @@ export default function Layout() {
           <h1>MPBCDC</h1>
           <p>Client Portal</p>
           {user?.roles?.length > 0 && (
-            <span className="role-badge">{user.roles.join(', ')}</span>
+            <span className="role-badge">
+              {user.roles.map(formatRoleLabel).join(', ')}
+            </span>
           )}
           {companyId && (
             <span

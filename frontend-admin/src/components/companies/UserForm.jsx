@@ -31,7 +31,7 @@ export default function UserForm({ onSubmit, onCancel }) {
 
   return (
     <form className="form-card" onSubmit={handleSubmit}>
-      <h3>Add Client Admin</h3>
+      <h3>Add Admin</h3>
       <p className="placeholder-text">Super Admin can only provision company admin accounts.</p>
       {error && <div className="form-error">{error}</div>}
 
@@ -69,7 +69,7 @@ export default function UserForm({ onSubmit, onCancel }) {
           </button>
         )}
         <button type="submit" className="primary-btn" disabled={loading}>
-          {loading ? 'Creating…' : 'Add Client Admin'}
+          {loading ? 'Creating…' : 'Add Admin'}
         </button>
       </div>
     </form>

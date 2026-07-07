@@ -2,17 +2,16 @@ const {
   LOAN_APPLICATION_STATUS,
   LOAN_APPROVAL_DECISION,
   LOAN_MODULE,
-  QUEUE_STATUS_BY_APPROVER_ROLE,
+  QUEUE_STATUS_BY_LEVEL,
+  PENDING_APPROVAL_STATUSES,
   STATUS_AFTER_LEVEL_APPROVAL,
   TERMINAL_STATUSES,
 } = require('../constants/loanWorkflowStates');
 const { ROLES } = require('../utils/roles');
 
-/** Default 3-level loan matrix when tenant has no configured rows. */
+/** Single admin approval step when tenant has no configured rows. */
 const DEFAULT_LOAN_APPROVAL_LEVELS = Object.freeze([
-  { level: 1, approverRole: ROLES.REPORTING_MANAGER, slaDays: 3 },
-  { level: 2, approverRole: ROLES.HR_OFFICER, slaDays: 3 },
-  { level: 3, approverRole: ROLES.FINANCE_OFFICER, slaDays: 5 },
+  { level: 1, approverRole: ROLES.CLIENT_ADMIN, slaDays: 5 },
 ]);
 
 function hasRole(user, role) {
@@ -28,47 +27,38 @@ function normalizeMatrixLevels(matrixRows = []) {
     return [...DEFAULT_LOAN_APPROVAL_LEVELS];
   }
 
-  return activeLoanRows.map((row) => ({
-    level: row.level,
-    approverRole: row.approverRole,
-    slaDays: row.slaDays ?? 3,
-    gradeId: row.gradeId ?? null,
-    code: row.code,
-  }));
+  const primary = activeLoanRows[0];
+
+  return [
+    {
+      level: 1,
+      approverRole: ROLES.CLIENT_ADMIN,
+      slaDays: primary.slaDays ?? 5,
+      gradeId: primary.gradeId ?? null,
+      code: primary.code ?? 'LOAN_DEFAULT',
+    },
+  ];
 }
 
 function getLevelForStatus(status) {
-  switch (status) {
-    case LOAN_APPLICATION_STATUS.SUBMITTED:
-      return 1;
-    case LOAN_APPLICATION_STATUS.MANAGER_APPROVED:
-      return 2;
-    case LOAN_APPLICATION_STATUS.HR_APPROVED:
-      return 3;
-    default:
-      return null;
+  if (PENDING_APPROVAL_STATUSES.includes(status)) {
+    return 1;
   }
+
+  return null;
 }
 
-/**
- * Next approver role for an in-flight application, or null if complete / not approvable.
- */
-function getNextApprover(application, matrixRows = []) {
-  const levels = normalizeMatrixLevels(matrixRows);
+function getNextApprover(application) {
   const pendingLevel = getLevelForStatus(application?.status);
 
   if (!pendingLevel) {
     return null;
   }
 
-  const step = levels.find((row) => row.level === pendingLevel);
-  return step?.approverRole ?? null;
+  return ROLES.CLIENT_ADMIN;
 }
 
-/**
- * Whether the user may act on the application at its current workflow step.
- */
-function canApprove(user, application, matrixRows = []) {
+function canApprove(user, application) {
   if (!user || !application) {
     return { allowed: false, reason: 'User and application are required' };
   }
@@ -77,85 +67,65 @@ function canApprove(user, application, matrixRows = []) {
     return { allowed: false, reason: 'Application is already closed or rejected' };
   }
 
-  const nextApproverRole = getNextApprover(application, matrixRows);
-
-  if (!nextApproverRole) {
+  if (!getLevelForStatus(application.status)) {
     return { allowed: false, reason: 'No pending approval step for this application' };
   }
 
-  // Company admin may act at any pending workflow step (typical for small tenants).
-  if (hasRole(user, ROLES.CLIENT_ADMIN)) {
-    return { allowed: true, approverRole: nextApproverRole };
-  }
-
-  if (!hasRole(user, nextApproverRole)) {
+  if (!hasRole(user, ROLES.CLIENT_ADMIN)) {
     return {
       allowed: false,
-      reason: `Only ${nextApproverRole} can approve at this stage`,
+      reason: 'Only company admin can approve loan applications',
     };
   }
 
-  return { allowed: true, approverRole: nextApproverRole };
+  return { allowed: true, approverRole: ROLES.CLIENT_ADMIN };
 }
 
-/**
- * Resolve application status after an approval decision.
- */
-function getStatusAfterDecision(application, decision, matrixRows = []) {
+function getStatusAfterDecision(application, decision) {
   if (decision === LOAN_APPROVAL_DECISION.REJECTED) {
     return LOAN_APPLICATION_STATUS.REJECTED;
   }
 
-  const levels = normalizeMatrixLevels(matrixRows);
   const pendingLevel = getLevelForStatus(application?.status);
 
   if (!pendingLevel) {
     return application?.status ?? null;
   }
 
-  const nextStatus = STATUS_AFTER_LEVEL_APPROVAL[pendingLevel];
-
-  if (!nextStatus) {
-    return application?.status ?? null;
-  }
-
-  const hasMoreLevels = levels.some((row) => row.level > pendingLevel);
-
-  if (!hasMoreLevels && pendingLevel === levels.length) {
-    return nextStatus;
-  }
-
-  return nextStatus;
+  return STATUS_AFTER_LEVEL_APPROVAL[pendingLevel];
 }
 
-/**
- * Application statuses shown in a role's approval queue.
- */
+function getQueueStatusesForLevel(level) {
+  return QUEUE_STATUS_BY_LEVEL[level] ?? [];
+}
+
+function getAllPendingQueueStatuses() {
+  return [...PENDING_APPROVAL_STATUSES];
+}
+
 function getQueueStatusesForRole(role) {
-  return QUEUE_STATUS_BY_APPROVER_ROLE[role] ?? [];
-}
-
-function canAccessQueue(user, matrixRows = []) {
-  const levels = normalizeMatrixLevels(matrixRows);
-  const userRoles = user?.roles ?? [];
-
-  if (hasRole(user, ROLES.CLIENT_ADMIN)) {
-    return levels.map((row) => ({
-      level: row.level,
-      approverRole: row.approverRole,
-      statuses: getQueueStatusesForRole(row.approverRole),
-      slaDays: row.slaDays,
-    }));
+  if (role === ROLES.CLIENT_ADMIN) {
+    return getAllPendingQueueStatuses();
   }
 
-  return levels
-    .filter((row) => userRoles.includes(row.approverRole))
-    .map((row) => ({
-      level: row.level,
-      approverRole: row.approverRole,
-      statuses: getQueueStatusesForRole(row.approverRole),
-      slaDays: row.slaDays,
-    }));
+  return [];
+}
+
+function canAccessQueue(user) {
+  if (!hasRole(user, ROLES.CLIENT_ADMIN)) {
+    return [];
+  }
+
+  const [level] = DEFAULT_LOAN_APPROVAL_LEVELS;
+
+  return [
+    {
+      level: level.level,
+      approverRole: level.approverRole,
+      statuses: getQueueStatusesForLevel(level.level),
+      slaDays: level.slaDays,
+    },
+  ];
 }
 
 module.exports = {
@@ -164,6 +134,8 @@ module.exports = {
   getNextApprover,
   canApprove,
   getStatusAfterDecision,
+  getQueueStatusesForLevel,
   getQueueStatusesForRole,
+  getAllPendingQueueStatuses,
   canAccessQueue,
 };

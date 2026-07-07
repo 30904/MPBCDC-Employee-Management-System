@@ -11,8 +11,7 @@ import StatusBadge from '../../../components/StatusBadge.jsx';
 import { getApiErrorMessage } from '../../../utils/apiError.js';
 import LoanApprovalMatrixForm from './LoanApprovalMatrixForm.jsx';
 
-const WORKFLOW_FLOW =
-  'Submitted → Manager (L1) → HR (L2) → Finance (L3) → Disbursed → Closed';
+const WORKFLOW_FLOW = 'Submitted → Admin approval → Disbursed → Closed';
 
 export default function LoanApprovalWorkflow() {
   const [rows, setRows] = useState([]);
@@ -96,8 +95,7 @@ export default function LoanApprovalWorkflow() {
           <h3>Loan Approval Workflow</h3>
           <p className="placeholder-text">{WORKFLOW_FLOW}</p>
           <p className="placeholder-text">
-            HR cannot approve until Manager approves. Finance queue only shows HR-approved
-            applications.
+            Admin reviews and approves submitted loan applications in one step.
           </p>
         </div>
         <div className="header-actions">
@@ -108,12 +106,12 @@ export default function LoanApprovalWorkflow() {
               onClick={handleInitialize}
               disabled={initializing}
             >
-              {initializing ? 'Initializing…' : 'Use Default 3-Level Workflow'}
+              {initializing ? 'Initializing…' : 'Use Default Workflow'}
             </button>
           )}
-          {!showForm && (
+          {!showForm && rows.length === 0 && (
             <button type="button" className="primary-btn" onClick={() => setShowForm(true)}>
-              + Add Level
+              + Configure Workflow
             </button>
           )}
         </div>
@@ -136,7 +134,7 @@ export default function LoanApprovalWorkflow() {
         {!loading && !error && rows.length === 0 && (
           <EmptyState
             title="No loan approval workflow configured"
-            message="Initialize the default 3-level matrix: Manager (3d) → HR (3d) → Finance (5d)."
+            message="Initialize the default single-step admin approval workflow."
             action={
               <button
                 type="button"
@@ -157,7 +155,7 @@ export default function LoanApprovalWorkflow() {
                 <tr>
                   <th>Level</th>
                   <th>Code</th>
-                  <th>Approver Role</th>
+                  <th>Approver</th>
                   <th>SLA</th>
                   <th>Status</th>
                   <th aria-label="Actions" />
@@ -170,7 +168,7 @@ export default function LoanApprovalWorkflow() {
                     <td>
                       <code>{row.code}</code>
                     </td>
-                    <td>{row.approverRole}</td>
+                    <td>Admin</td>
                     <td>{row.slaDays} days</td>
                     <td>
                       <StatusBadge status={row.isActive ? 'Active' : 'Inactive'} />

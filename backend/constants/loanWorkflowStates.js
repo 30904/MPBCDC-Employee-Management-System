@@ -1,7 +1,6 @@
 /**
- * Loan application lifecycle (Sheet 03 — Approval Workflow).
- * Draft → Submitted → Manager → HR → Finance → Disbursed → Closed
- * Rejected is terminal from any approval stage.
+ * Loan application lifecycle.
+ * Draft → Submitted → Admin approval → FinanceApproved → Disbursed → Closed
  */
 
 const LOAN_MODULE = 'LOAN';
@@ -22,18 +21,20 @@ const LOAN_APPROVAL_DECISION = Object.freeze({
   REJECTED: 'Rejected',
 });
 
-/** Status reached after each approval level completes successfully. */
+/** Status after the single admin approval step. */
 const STATUS_AFTER_LEVEL_APPROVAL = Object.freeze({
-  1: LOAN_APPLICATION_STATUS.MANAGER_APPROVED,
-  2: LOAN_APPLICATION_STATUS.HR_APPROVED,
-  3: LOAN_APPLICATION_STATUS.FINANCE_APPROVED,
+  1: LOAN_APPLICATION_STATUS.FINANCE_APPROVED,
 });
 
-/** Application statuses visible in each approver's queue. */
-const QUEUE_STATUS_BY_APPROVER_ROLE = Object.freeze({
-  REPORTING_MANAGER: [LOAN_APPLICATION_STATUS.SUBMITTED],
-  HR_OFFICER: [LOAN_APPLICATION_STATUS.MANAGER_APPROVED],
-  FINANCE_OFFICER: [LOAN_APPLICATION_STATUS.HR_APPROVED],
+/** All statuses waiting for admin review (includes legacy in-flight statuses). */
+const PENDING_APPROVAL_STATUSES = Object.freeze([
+  LOAN_APPLICATION_STATUS.SUBMITTED,
+  LOAN_APPLICATION_STATUS.MANAGER_APPROVED,
+  LOAN_APPLICATION_STATUS.HR_APPROVED,
+]);
+
+const QUEUE_STATUS_BY_LEVEL = Object.freeze({
+  1: [...PENDING_APPROVAL_STATUSES],
 });
 
 const TERMINAL_STATUSES = Object.freeze([
@@ -46,6 +47,7 @@ module.exports = {
   LOAN_APPLICATION_STATUS,
   LOAN_APPROVAL_DECISION,
   STATUS_AFTER_LEVEL_APPROVAL,
-  QUEUE_STATUS_BY_APPROVER_ROLE,
+  QUEUE_STATUS_BY_LEVEL,
+  PENDING_APPROVAL_STATUSES,
   TERMINAL_STATUSES,
 };

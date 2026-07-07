@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 const createTenantModel = require('./createTenantModel');
-const { ALL_ROLES } = require('../utils/roles');
+const { ROLES } = require('../utils/roles');
 const { LOAN_MODULE } = require('../constants/loanWorkflowStates');
 
 /**
  * Shared workflow master — approval levels per module (and optional grade).
- * Loan default: L1 REPORTING_MANAGER (3d), L2 HR_OFFICER (3d), L3 FINANCE_OFFICER (5d).
+ * Loan default: 3 approval levels handled by Admin.
  */
 const ApprovalMatrix = createTenantModel({
   modelName: 'ApprovalMatrix',
@@ -37,7 +37,7 @@ const ApprovalMatrix = createTenantModel({
     approverRole: {
       type: String,
       required: [true, 'approverRole is required'],
-      enum: ALL_ROLES,
+      enum: [ROLES.CLIENT_ADMIN],
     },
     slaDays: {
       type: Number,

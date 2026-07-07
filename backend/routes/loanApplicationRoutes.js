@@ -18,17 +18,7 @@ const loanApplicationController = require('../controllers/loanApplicationControl
 
 
 
-const APPROVER_ROLES = [
-
-  ROLES.CLIENT_ADMIN,
-
-  ROLES.REPORTING_MANAGER,
-
-  ROLES.HR_OFFICER,
-
-  ROLES.FINANCE_OFFICER,
-
-];
+const APPROVER_ROLES = [ROLES.CLIENT_ADMIN];
 
 
 

@@ -1,4 +1,5 @@
 import { AUTH_KEYS, storageKey } from '../constants/authStorage.js';
+import { CLIENT_ROLES } from '../constants/roles.js';
 
 const LEGACY_UNSCOPED_KEYS = [
   { legacy: 'token', target: AUTH_KEYS.token },
@@ -103,10 +104,4 @@ export function hasCompanyContext() {
   return Boolean(getCompanyId());
 }
 
-export const CLIENT_ROLES = [
-  'CLIENT_ADMIN',
-  'HR_OFFICER',
-  'FINANCE_OFFICER',
-  'REPORTING_MANAGER',
-  'REGIONAL_MANAGER',
-];
+export { CLIENT_ROLES };

@@ -7,7 +7,7 @@ const { validatePaginationMiddleware } = require('../utils/pagination');
 const { ROLES } = require('../utils/roles');
 const loanRecoveryController = require('../controllers/loanRecoveryController');
 
-const RECOVERY_ROLES = [ROLES.CLIENT_ADMIN, ROLES.FINANCE_OFFICER];
+const RECOVERY_ROLES = [ROLES.CLIENT_ADMIN];
 
 const router = express.Router();
 

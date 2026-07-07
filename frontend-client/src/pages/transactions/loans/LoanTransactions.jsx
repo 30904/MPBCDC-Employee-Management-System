@@ -21,7 +21,7 @@ export default function LoanTransactions() {
         element={
           <ModuleShell
             title="Loan Transactions"
-            subtitle="Applications, approvals, disbursement, EMI, recovery, closure"
+            subtitle="Applications, admin approval, disbursement, EMI, and recovery"
             tabs={TABS}
           />
         }

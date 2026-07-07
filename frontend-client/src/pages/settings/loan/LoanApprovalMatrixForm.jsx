@@ -1,17 +1,12 @@
 import { useEffect, useState } from 'react';
 import { getApiErrorMessage } from '../../../utils/apiError.js';
-
-const APPROVER_ROLES = [
-  { value: 'REPORTING_MANAGER', label: 'Reporting Manager (Level 1)' },
-  { value: 'HR_OFFICER', label: 'HR Officer (Level 2)' },
-  { value: 'FINANCE_OFFICER', label: 'Finance Officer (Level 3)' },
-];
+import { ROLES } from '../../../constants/roles.js';
 
 const EMPTY_FORM = {
   code: 'LOAN_DEFAULT',
   module: 'LOAN',
   level: '1',
-  approverRole: 'REPORTING_MANAGER',
+  approverRole: ROLES.CLIENT_ADMIN,
   slaDays: '3',
   isActive: true,
 };
@@ -25,7 +20,7 @@ function toFormValues(initialValues) {
     code: initialValues.code ?? 'LOAN_DEFAULT',
     module: initialValues.module ?? 'LOAN',
     level: String(initialValues.level ?? 1),
-    approverRole: initialValues.approverRole ?? 'REPORTING_MANAGER',
+    approverRole: ROLES.CLIENT_ADMIN,
     slaDays: String(initialValues.slaDays ?? 3),
     isActive: initialValues.isActive !== false,
   };
@@ -36,7 +31,7 @@ function buildPayload(form) {
     code: form.code.trim().toUpperCase(),
     module: form.module.trim().toUpperCase(),
     level: Number(form.level),
-    approverRole: form.approverRole,
+    approverRole: ROLES.CLIENT_ADMIN,
     slaDays: Number(form.slaDays),
     isActive: form.isActive,
   };
@@ -107,17 +102,8 @@ export default function LoanApprovalMatrixForm({
           />
         </label>
         <label>
-          Approver Role
-          <select
-            value={form.approverRole}
-            onChange={(e) => updateField('approverRole', e.target.value)}
-          >
-            {APPROVER_ROLES.map((role) => (
-              <option key={role.value} value={role.value}>
-                {role.label}
-              </option>
-            ))}
-          </select>
+          Approver
+          <input type="text" value="Admin" readOnly />
         </label>
         <label>
           SLA (days)

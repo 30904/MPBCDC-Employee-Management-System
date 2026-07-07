@@ -26,7 +26,7 @@ const {
   getStatusAfterDecision,
 
   getQueueStatusesForRole,
-
+  getAllPendingQueueStatuses,
 } = require('../services/loanWorkflowService');
 
 const loanApplicationService = require('../services/loanApplicationService');
@@ -37,17 +37,7 @@ const { ROLES } = require('../utils/roles');
 
 
 
-const APPROVER_ROLES = [
-
-  ROLES.CLIENT_ADMIN,
-
-  ROLES.REPORTING_MANAGER,
-
-  ROLES.HR_OFFICER,
-
-  ROLES.FINANCE_OFFICER,
-
-];
+const APPROVER_ROLES = [ROLES.CLIENT_ADMIN];
 
 
 
@@ -68,11 +58,8 @@ async function loadLoanMatrix(companyId) {
 
 
 function getUserQueueRoles(user) {
-
   const roles = user?.roles ?? [];
-
   return APPROVER_ROLES.filter((role) => roles.includes(role) && role !== ROLES.CLIENT_ADMIN);
-
 }
 
 
@@ -227,37 +214,9 @@ async function listApprovalQueue(req, res) {
 
   const isClientAdmin = req.user.roles.includes(ROLES.CLIENT_ADMIN);
 
-
-
-  let statuses = [];
-
-
-
-  if (isClientAdmin) {
-
-    statuses = [
-
-      ...getQueueStatusesForRole(ROLES.REPORTING_MANAGER),
-
-      ...getQueueStatusesForRole(ROLES.HR_OFFICER),
-
-      ...getQueueStatusesForRole(ROLES.FINANCE_OFFICER),
-
-    ];
-
-  } else {
-
-    userRoles.forEach((role) => {
-
-      statuses.push(...getQueueStatusesForRole(role));
-
-    });
-
-  }
-
-
-
-  statuses = [...new Set(statuses)];
+  const statuses = isClientAdmin
+    ? getAllPendingQueueStatuses()
+    : [...new Set(userRoles.flatMap((role) => getQueueStatusesForRole(role)))];
 
 
 
@@ -280,7 +239,7 @@ async function listApprovalQueue(req, res) {
 
       ...application.toObject(),
 
-      nextApproverRole: getNextApprover(application, matrixRows),
+      nextApproverRole: 'Admin',
 
       canCurrentUserApprove: approvalCheck.allowed,
 

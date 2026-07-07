@@ -5,7 +5,7 @@ export default function Reports() {
     <PlaceholderPage
       title="Reports"
       subtitle="Reports will be displayed based on the logged-in user's role"
-      endpoints={['CLIENT_ADMIN', 'HR_OFFICER', 'FINANCE_OFFICER', 'REPORTING_MANAGER', 'REGIONAL_MANAGER']}
+      endpoints={['CLIENT_ADMIN']}
     />
   );
 }

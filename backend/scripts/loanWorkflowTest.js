@@ -1,18 +1,16 @@
 /**
- * Loan workflow service checks (Sheet 03 — Approval Workflow).
+ * Loan workflow unit checks (no database).
  *
  * Run: npm run test:loan-workflow
  */
-const {
-  LOAN_APPLICATION_STATUS,
-  LOAN_APPROVAL_DECISION,
-} = require('../constants/loanWorkflowStates');
+const { LOAN_APPLICATION_STATUS } = require('../constants/loanWorkflowStates');
 const { ROLES } = require('../utils/roles');
 const {
   getNextApprover,
   canApprove,
   getStatusAfterDecision,
   getQueueStatusesForRole,
+  getAllPendingQueueStatuses,
 } = require('../services/loanWorkflowService');
 
 const results = [];
@@ -22,72 +20,40 @@ function record(name, passed, detail = '') {
   console.log(`[${passed ? 'PASS' : 'FAIL'}] ${name}${detail ? ` — ${detail}` : ''}`);
 }
 
-const manager = { roles: [ROLES.REPORTING_MANAGER] };
-const hr = { roles: [ROLES.HR_OFFICER] };
-const finance = { roles: [ROLES.FINANCE_OFFICER] };
+const clientAdmin = { roles: [ROLES.CLIENT_ADMIN] };
+const employee = { roles: [ROLES.EMPLOYEE] };
 
 const submitted = { status: LOAN_APPLICATION_STATUS.SUBMITTED };
-const managerApproved = { status: LOAN_APPLICATION_STATUS.MANAGER_APPROVED };
-const hrApproved = { status: LOAN_APPLICATION_STATUS.HR_APPROVED };
+const legacyManagerApproved = { status: LOAN_APPLICATION_STATUS.MANAGER_APPROVED };
 
 record(
-  'Submitted application routes to REPORTING_MANAGER next',
-  getNextApprover(submitted) === ROLES.REPORTING_MANAGER
+  'Submitted application routes to admin approver',
+  getNextApprover(submitted) === ROLES.CLIENT_ADMIN
 );
 
 record(
-  'Manager can approve Submitted application',
-  canApprove(manager, submitted).allowed === true
-);
-
-record(
-  'HR cannot approve before Manager',
-  canApprove(hr, submitted).allowed === false
-);
-
-const clientAdmin = { roles: [ROLES.CLIENT_ADMIN] };
-
-record(
-  'Client admin can approve Submitted application',
+  'Admin can approve submitted application',
   canApprove(clientAdmin, submitted).allowed === true
 );
 
 record(
-  'Client admin approval acts as current workflow role',
-  canApprove(clientAdmin, submitted).approverRole === ROLES.REPORTING_MANAGER
+  'Employee cannot approve submitted application',
+  canApprove(employee, submitted).allowed === false
 );
 
 record(
-  'HR queue only shows ManagerApproved applications',
-  getQueueStatusesForRole(ROLES.HR_OFFICER).includes(LOAN_APPLICATION_STATUS.MANAGER_APPROVED) &&
-    !getQueueStatusesForRole(ROLES.HR_OFFICER).includes(LOAN_APPLICATION_STATUS.SUBMITTED)
+  'Single approval advances submitted application to FinanceApproved',
+  getStatusAfterDecision(submitted, 'Approved') === LOAN_APPLICATION_STATUS.FINANCE_APPROVED
 );
 
 record(
-  'HR can approve after Manager approval',
-  canApprove(hr, managerApproved).allowed === true
+  'Legacy in-flight application can still be approved by admin',
+  canApprove(clientAdmin, legacyManagerApproved).allowed === true
 );
 
 record(
-  'Finance can approve after HR approval',
-  canApprove(finance, hrApproved).allowed === true
-);
-
-record(
-  'Finance cannot approve before HR',
-  canApprove(finance, managerApproved).allowed === false
-);
-
-record(
-  'Approval advances Submitted to ManagerApproved',
-  getStatusAfterDecision(submitted, LOAN_APPROVAL_DECISION.APPROVED) ===
-    LOAN_APPLICATION_STATUS.MANAGER_APPROVED
-);
-
-record(
-  'Rejection sets terminal Rejected status',
-  getStatusAfterDecision(submitted, LOAN_APPROVAL_DECISION.REJECTED) ===
-    LOAN_APPLICATION_STATUS.REJECTED
+  'Admin queue includes all pending statuses',
+  getQueueStatusesForRole(ROLES.CLIENT_ADMIN).length === getAllPendingQueueStatuses().length
 );
 
 const failed = results.filter((item) => !item.passed);
