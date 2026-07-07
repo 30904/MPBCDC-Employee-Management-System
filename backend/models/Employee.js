@@ -128,7 +128,7 @@ const employeeSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-    collection: 'employees',
+    collection: 'mpbcdc_employees',
   }
 );
 

@@ -5,7 +5,7 @@ import SubModuleGuard from './routes/SubModuleGuard.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Login from './pages/Login.jsx';
 import Reports from './pages/reports/Reports.jsx';
-import EmployeeCreate from './pages/settings/employees/EmployeeCreate.jsx';
+import EmployeeForm from './pages/settings/employees/EmployeeForm.jsx';
 import EmployeeDetails from './pages/settings/employees/EmployeeDetails.jsx';
 import Departments from './pages/settings/organization/Departments.jsx';
 import Designations from './pages/settings/organization/Designations.jsx';
@@ -108,7 +108,7 @@ export default function App() {
               path="/settings/employees/create"
               element={
                 <SubModuleGuard roles={['CLIENT_ADMIN', 'HR_OFFICER']}>
-                  <EmployeeCreate />
+                  <EmployeeForm />
                 </SubModuleGuard>
               }
             />
@@ -124,7 +124,7 @@ export default function App() {
               path="/settings/employees/:id/edit"
               element={
                 <SubModuleGuard roles={['CLIENT_ADMIN', 'HR_OFFICER']}>
-                  <EmployeeCreate mode="edit" />
+                  <EmployeeForm mode="edit" />
                 </SubModuleGuard>
               }
             />

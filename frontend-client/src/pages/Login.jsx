@@ -71,9 +71,7 @@ export default function Login() {
       <form className="login-card" onSubmit={handleSubmit}>
         <h1>MPBCDC Client Portal</h1>
         <p className="login-subtitle">HR · Finance · Manager · Admin</p>
-        <p className="login-mock-note">
-          Mock Login (temporary when backend is unavailable): {MOCK_LOGIN_ID} / {MOCK_PASSWORD}
-        </p>
+        
 
         {accessDenied && (
           <div className="login-error">

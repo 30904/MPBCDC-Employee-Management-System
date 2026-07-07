@@ -67,6 +67,34 @@ code {
   font-size: 0.875rem;
 }
 
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.detail-grid > div {
+  background: #f8fdf8;
+  border: 1px solid #d9f3df;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.detail-grid strong {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #166534;
+  margin-bottom: 0.35rem;
+}
+
+.detail-grid span {
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
 .card-link {
   margin-top: 1rem;
 }

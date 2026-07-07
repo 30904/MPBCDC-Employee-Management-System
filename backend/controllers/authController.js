@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
+const Employee = require('../models/Employee');
 const User = require('../models/User');
 const { sendError, sendSuccess } = require('../utils/apiResponse');
 const { ROLES } = require('../utils/roles');
@@ -79,6 +80,14 @@ async function login(req, res) {
 
     if (user.status !== 'Active') {
       return sendError(res, 'Account is inactive', 403);
+    }
+
+    if (user.employeeId) {
+      const employee = await Employee.findById(user.employeeId).select('status');
+
+      if (!employee || employee.status !== 'Active') {
+        return sendError(res, 'Employee account is inactive', 403);
+      }
     }
 
     const passwordMatch = await user.comparePassword(password);
