@@ -95,6 +95,7 @@ router.get('/', (_req, res) => {
       leaveAccrualRules: `${API_BASE_PATH}/leave-accrual-rules?page=1&limit=20`,
       loanEligibilityRules: `${API_BASE_PATH}/loan-eligibility-rules?page=1&limit=20`,
       approvalMatrices: `${API_BASE_PATH}/approval-matrices?module=LOAN`,
+      approvalMatricesLeaveInit: `${API_BASE_PATH}/approval-matrices/initialize-leave-default`,
       loanApplicationQueue: `${API_BASE_PATH}/loan-applications/queue`,
       loanApplications: `${API_BASE_PATH}/loan-applications?page=1&limit=20`,
       loanApplicationsMine: `${API_BASE_PATH}/loan-applications/mine?page=1&limit=20`,
