@@ -12,6 +12,7 @@ router.use(authMiddleware);
 router.use(tenantResolver);
 router.use(authorizeRoles(ROLES.CLIENT_ADMIN, ROLES.HR_OFFICER));
 
+router.post('/with-account', authorizeRoles(ROLES.CLIENT_ADMIN), asyncHandler(employeeController.createEmployeeWithAccount));
 router.get('/', asyncHandler(employeeController.listEmployees));
 router.get('/:id', asyncHandler(employeeController.getEmployee));
 router.post('/', asyncHandler(employeeController.createEmployee));

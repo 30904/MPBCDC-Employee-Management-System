@@ -6,7 +6,7 @@ const { tenantFilter } = require('../../utils/tenantQuery');
  * Adds Model.forTenant(companyId) — all queries automatically include { companyId }.
  *
  * @example
- * const employees = await MpbcdcEmployee.forTenant(req.companyId).find({ status: 'Active' });
+ * const employees = await Employee.find({ companyId, status: 'Active' });
  */
 function tenantScopedPlugin(schema) {
   schema.statics.forTenant = function forTenant(companyId) {

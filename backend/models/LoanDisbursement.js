@@ -8,7 +8,7 @@ const LoanDisbursement = createTenantModel({
     disbursementNo: { type: String, trim: true },
     applicationId: { type: mongoose.Schema.Types.ObjectId, ref: 'LoanApplication' },
     loanNo: { type: String, trim: true },
-    employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'MpbcdcEmployee' },
+    employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
     loanTypeId: { type: mongoose.Schema.Types.ObjectId, ref: 'LoanType' },
     disbursedAmount: { type: Number, min: 0 },
     interestRate: { type: Number, min: 0 },

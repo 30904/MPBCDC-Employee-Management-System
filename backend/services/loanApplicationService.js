@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+require('../models/Employee');
 const LoanApplication = require('../models/LoanApplication');
 const LoanType = require('../models/LoanType');
 const AppError = require('../utils/AppError');
@@ -218,7 +219,7 @@ async function getApplicationById({ companyId, applicationId, employeeId = null 
   const application = await tenantApplications(companyId)
     .findById(applicationId)
     .populate('loanTypeId', 'code name interestRate maxAmount maxTenureMonths')
-    .populate('employeeId', 'employeeCode grossSalary dateOfJoining retirementDate');
+    .populate('employeeId', 'employeeCode grossSalary joiningDate retirementDate');
 
   if (!application) {
     throw new AppError('Loan application not found', 404, 'NOT_FOUND');

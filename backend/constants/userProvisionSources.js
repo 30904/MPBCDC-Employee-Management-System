@@ -1,0 +1,8 @@
+const USER_PROVISION_SOURCES = Object.freeze({
+  SUPER_ADMIN: 'SUPER_ADMIN',
+  CLIENT_ADMIN: 'CLIENT_ADMIN',
+});
+
+module.exports = {
+  USER_PROVISION_SOURCES,
+};

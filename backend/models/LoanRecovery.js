@@ -25,7 +25,7 @@ const LoanRecovery = createTenantModel({
     },
     employeeId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'MpbcdcEmployee',
+      ref: 'Employee',
       default: null,
     },
     emiNo: {

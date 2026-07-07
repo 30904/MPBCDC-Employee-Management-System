@@ -13,7 +13,7 @@ const LoanApplication = createTenantModel({
   collection: 'loan_applications',
   fields: {
     applicationNo: { type: String, trim: true },
-    employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'MpbcdcEmployee' },
+    employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
     loanTypeId: { type: mongoose.Schema.Types.ObjectId, ref: 'LoanType' },
     purpose: { type: String, trim: true, maxlength: 500 },
     requestedAmount: { type: Number, min: 0 },

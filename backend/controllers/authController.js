@@ -6,25 +6,8 @@ const Company = require('../models/Company');
 const { sendError, sendSuccess } = require('../utils/apiResponse');
 const { ROLES } = require('../utils/roles');
 const { belongsToTenant } = require('../utils/tenantQuery');
-
-const MOCK_LOGIN_ID = 'client@celeris.com';
-const MOCK_PASSWORD = '12345';
-
-function isMockCredentialMatch(loginId, password) {
-  return String(loginId || '').trim().toLowerCase() === MOCK_LOGIN_ID && password === MOCK_PASSWORD;
-}
-
-function buildMockClientAdminUser() {
-  return {
-    _id: new mongoose.Types.ObjectId(),
-    loginId: MOCK_LOGIN_ID,
-    roles: [ROLES.CLIENT_ADMIN],
-    companyId: new mongoose.Types.ObjectId(),
-    employeeId: null,
-    status: 'Active',
-    lastLoginAt: new Date(),
-  };
-}
+const { AUTH_PORTALS, AUTH_PORTAL_VALUES } = require('../constants/authPortals');
+const { assertPortalAccess } = require('../utils/portalAuth');
 
 function buildToken(user) {
   const payload = {
@@ -102,24 +85,14 @@ function sendErrorPayload(message, status, code) {
 }
 
 async function login(req, res) {
-  const { loginId, password, companyCode } = req.body;
+  const { loginId, password, companyCode, portal } = req.body;
 
   if (!loginId || !password) {
     return sendError(res, 'Login ID and password are required', 400);
   }
 
-  // TEMPORARY MOCK LOGIN: bypass MongoDB only for the known development credential pair.
-  if (process.env.NODE_ENV !== 'production' && isMockCredentialMatch(loginId, password)) {
-    const mockUser = buildMockClientAdminUser();
-    const token = buildToken(mockUser);
-
-    return sendSuccess(res, {
-      token,
-      user: {
-        ...sanitizeUser(mockUser),
-        mockLogin: true,
-      },
-    });
+  if (!portal || !AUTH_PORTAL_VALUES.includes(portal)) {
+    return sendError(res, 'Portal context is required', 400, 'PORTAL_REQUIRED');
   }
 
   const resolved = await resolveLoginCandidates(loginId, companyCode);
@@ -145,6 +118,15 @@ async function login(req, res) {
 
   if (user.status !== 'Active') {
     return sendError(res, 'Account is inactive', 403);
+  }
+
+  const portalCheck = assertPortalAccess(user, portal);
+  if (!portalCheck.allowed) {
+    return sendError(res, portalCheck.message, 403, portalCheck.code);
+  }
+
+  if (portal === AUTH_PORTALS.EMPLOYEE && !user.employeeId) {
+    return sendError(res, 'Employee profile link is missing', 403, 'EMPLOYEE_SCOPE_REQUIRED');
   }
 
   if (user.employeeId) {

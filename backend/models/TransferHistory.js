@@ -5,7 +5,7 @@ const TransferHistory = createTenantModel({
   modelName: 'TransferHistory',
   collection: 'transfer_histories',
   fields: {
-    employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'MpbcdcEmployee' },
+    employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
   },
 });
 

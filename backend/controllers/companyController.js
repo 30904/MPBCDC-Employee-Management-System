@@ -3,6 +3,7 @@ const User = require('../models/User');
 const { sendError, sendSuccess, sendPaginatedSuccess } = require('../utils/apiResponse');
 const { parsePagination, executePaginatedQuery } = require('../utils/pagination');
 const { ROLES } = require('../utils/roles');
+const { USER_PROVISION_SOURCES } = require('../constants/userProvisionSources');
 const { sanitizeUser } = require('./authController');
 
 /**
@@ -83,7 +84,7 @@ async function listCompanyUsers(req, res) {
 }
 
 async function createCompanyUser(req, res) {
-  const { loginId, password, roles } = req.body;
+  const { loginId, password } = req.body;
   const companyId = req.params.id;
 
   const company = await Company.findById(companyId);
@@ -95,13 +96,8 @@ async function createCompanyUser(req, res) {
     return sendError(res, 'Cannot provision users for an inactive company', 400);
   }
 
-  if (!loginId || !password || !Array.isArray(roles) || roles.length === 0) {
-    return sendError(res, 'loginId, password, and roles are required', 400);
-  }
-
-  const invalidRole = roles.find((role) => role === ROLES.SUPER_ADMIN);
-  if (invalidRole) {
-    return sendError(res, 'Cannot assign SUPER_ADMIN to tenant user', 400);
+  if (!loginId || !password) {
+    return sendError(res, 'loginId and password are required', 400);
   }
 
   const existing = await User.forTenant(companyId).findOne({ loginId: loginId.trim() });
@@ -114,7 +110,8 @@ async function createCompanyUser(req, res) {
   const user = await User.forTenant(companyId).create({
     loginId: loginId.trim(),
     passwordHash,
-    roles,
+    roles: [ROLES.CLIENT_ADMIN],
+    provisionSource: USER_PROVISION_SOURCES.SUPER_ADMIN,
     status: 'Active',
   });
 
