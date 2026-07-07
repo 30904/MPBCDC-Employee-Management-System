@@ -5,26 +5,10 @@ import { getApiErrorMessage, unwrapApiData } from '../api/response.js';
 import { setToken, setUser } from '../utils/auth.js';
 import './Login.css';
 
-const MOCK_LOGIN_ID = 'client@celeris.com';
-const MOCK_PASSWORD = '12345';
-
-function isAuthServiceUnavailable(error) {
-  if (!error.response) {
-    return true;
-  }
-
-  return error.response.status >= 500;
-}
-
-function isMockCredentialMatch(loginId, password) {
-  return loginId.trim().toLowerCase() === MOCK_LOGIN_ID && password === MOCK_PASSWORD;
-}
-
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const [loginId, setLoginId] = useState('');
-  const [companyCode, setCompanyCode] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -51,7 +35,7 @@ export default function Login() {
       const response = await apiClient.post('/auth/login', {
         loginId,
         password,
-        companyCode: companyCode.trim() || undefined,
+        portal: 'client',
       });
       const payload = unwrapApiData(response);
 
@@ -59,34 +43,11 @@ export default function Login() {
       setUser(payload.user);
       navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
     } catch (err) {
-      if (isAuthServiceUnavailable(err) && isMockCredentialMatch(loginId, password)) {
-        setToken('mock-client-token');
-        setUser({
-          id: 'mock-client-user',
-          loginId: MOCK_LOGIN_ID,
-          roles: ['CLIENT_ADMIN'],
-          companyId: 'mock-company',
-          mockLogin: true,
-        });
-        navigate(location.state?.from?.pathname || '/dashboard', { replace: true });
-        return;
-      }
-
-      if (isAuthServiceUnavailable(err)) {
-        setError('Authentication service unavailable. Use Mock Login credentials for temporary access.');
-        return;
-      }
-
-      const apiError = err?.response?.data?.error;
-      const apiCode = err?.response?.data?.code;
-
-      if (apiCode === 'COMPANY_NOT_FOUND') {
-        setError('Company code not found. Check the code in Super Admin (e.g. ABCD1234 for TEST_COMPANY).');
-      } else if (apiCode === 'COMPANY_CODE_REQUIRED') {
-        setError('Enter your company code — this login ID exists in more than one organization.');
-      } else {
-        setError(apiError || getApiErrorMessage(err) || 'Invalid credentials. Please try again.');
-      }
+      setError(
+        err?.response?.data?.error ||
+          getApiErrorMessage(err) ||
+          'Invalid credentials. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -97,9 +58,7 @@ export default function Login() {
       <form className="login-card" onSubmit={handleSubmit}>
         <h1>MPBCDC Client Portal</h1>
         <p className="login-subtitle">HR · Finance · Manager · Admin</p>
-        <p className="login-mock-note">
-          Mock Login (temporary when backend is unavailable): {MOCK_LOGIN_ID} / {MOCK_PASSWORD}
-        </p>
+        
 
         {accessDenied && <div className="login-error">{accessDeniedMessage()}</div>}
         {error && <div className="login-error">{error}</div>}
@@ -113,21 +72,6 @@ export default function Login() {
           required
           autoComplete="username"
         />
-
-        <label htmlFor="companyCode">Company code</label>
-        <input
-          id="companyCode"
-          type="text"
-          value={companyCode}
-          onChange={(e) => setCompanyCode(e.target.value)}
-          required
-          autoComplete="organization"
-          placeholder="e.g. ABCD1234"
-        />
-        <p className="login-hint">
-          Use the company code from Super Admin. Employee loan applications only appear for the
-          same organization.
-        </p>
 
         <label htmlFor="password">Password</label>
         <input

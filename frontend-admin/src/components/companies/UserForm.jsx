@@ -1,12 +1,9 @@
 import { useState } from 'react';
 
-const PROVISION_ROLES = ['CLIENT_ADMIN'];
-
 export default function UserForm({ onSubmit, onCancel }) {
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [roles, setRoles] = useState(['CLIENT_ADMIN']);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -21,11 +18,10 @@ export default function UserForm({ onSubmit, onCancel }) {
 
     setLoading(true);
     try {
-      await onSubmit({ loginId, password, roles });
+      await onSubmit({ loginId, password, roles: ['CLIENT_ADMIN'] });
       setLoginId('');
       setPassword('');
       setConfirmPassword('');
-      setRoles(['CLIENT_ADMIN']);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -35,23 +31,14 @@ export default function UserForm({ onSubmit, onCancel }) {
 
   return (
     <form className="form-card" onSubmit={handleSubmit}>
-      <h3>Add Client Admin User</h3>
+      <h3>Add Client Admin</h3>
+      <p className="placeholder-text">Super Admin can only provision company admin accounts.</p>
       {error && <div className="form-error">{error}</div>}
 
       <div className="form-grid">
         <label>
           Login ID
           <input type="text" value={loginId} onChange={(e) => setLoginId(e.target.value)} required />
-        </label>
-        <label>
-          Role
-          <select value={roles[0]} onChange={(e) => setRoles([e.target.value])}>
-            {PROVISION_ROLES.map((role) => (
-              <option key={role} value={role}>
-                {role}
-              </option>
-            ))}
-          </select>
         </label>
         <label>
           Password
@@ -82,7 +69,7 @@ export default function UserForm({ onSubmit, onCancel }) {
           </button>
         )}
         <button type="submit" className="primary-btn" disabled={loading}>
-          {loading ? 'Creating…' : 'Add User'}
+          {loading ? 'Creating…' : 'Add Client Admin'}
         </button>
       </div>
     </form>

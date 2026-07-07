@@ -18,7 +18,7 @@ function record(name, passed, detail = '') {
 
 const employee = {
   grossSalary: 50000,
-  dateOfJoining: new Date('2020-01-01'),
+  joiningDate: new Date('2020-01-01'),
   retirementDate: new Date('2040-12-01'),
 };
 

@@ -1,4 +1,5 @@
 const LoanApplication = require('../models/LoanApplication');
+require('../models/Employee');
 
 const LoanApproval = require('../models/LoanApproval');
 

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const { ALL_ROLES, ROLES } = require('../utils/roles');
+const { USER_PROVISION_SOURCES } = require('../constants/userProvisionSources');
 const { companyIdField } = require('./shared/tenantFields');
 const { applyTenantIndexes } = require('./shared/applyTenantIndexes');
 const tenantScopedPlugin = require('./plugins/tenantScoped');
@@ -20,7 +21,7 @@ const userSchema = new mongoose.Schema(
     },
     employeeId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'MpbcdcEmployee',
+      ref: 'Employee',
       default: null,
     },
     roles: {
@@ -33,6 +34,11 @@ const userSchema = new mongoose.Schema(
       },
     },
     companyId: companyIdField(false),
+    provisionSource: {
+      type: String,
+      enum: Object.values(USER_PROVISION_SOURCES),
+      default: null,
+    },
     status: {
       type: String,
       enum: ['Active', 'Inactive'],

@@ -1,29 +1,13 @@
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
+const Employee = require('../models/Employee');
 const User = require('../models/User');
 const Company = require('../models/Company');
 const { sendError, sendSuccess } = require('../utils/apiResponse');
 const { ROLES } = require('../utils/roles');
 const { belongsToTenant } = require('../utils/tenantQuery');
-
-const MOCK_LOGIN_ID = 'client@celeris.com';
-const MOCK_PASSWORD = '12345';
-
-function isMockCredentialMatch(loginId, password) {
-  return String(loginId || '').trim().toLowerCase() === MOCK_LOGIN_ID && password === MOCK_PASSWORD;
-}
-
-function buildMockClientAdminUser() {
-  return {
-    _id: new mongoose.Types.ObjectId(),
-    loginId: MOCK_LOGIN_ID,
-    roles: [ROLES.CLIENT_ADMIN],
-    companyId: new mongoose.Types.ObjectId(),
-    employeeId: null,
-    status: 'Active',
-    lastLoginAt: new Date(),
-  };
-}
+const { AUTH_PORTALS, AUTH_PORTAL_VALUES } = require('../constants/authPortals');
+const { assertPortalAccess } = require('../utils/portalAuth');
 
 function buildToken(user) {
   const payload = {
@@ -61,7 +45,7 @@ async function loadCompanyForUser(user) {
   return Company.findById(user.companyId).select('name code status').lean();
 }
 
-async function resolveLoginUser(loginId, companyCode) {
+async function resolveLoginCandidates(loginId, companyCode) {
   const normalizedLoginId = String(loginId || '').trim();
 
   if (!normalizedLoginId) {
@@ -91,17 +75,9 @@ async function resolveLoginUser(loginId, companyCode) {
     if (!candidates.length) {
       return { error: sendErrorPayload('Invalid credentials', 401) };
     }
-  } else if (candidates.length > 1) {
-    return {
-      error: sendErrorPayload(
-        'Multiple accounts share this login ID. Enter your company code.',
-        400,
-        'COMPANY_CODE_REQUIRED'
-      ),
-    };
   }
 
-  return { user: candidates[0] };
+  return { candidates };
 }
 
 function sendErrorPayload(message, status, code) {
@@ -109,42 +85,56 @@ function sendErrorPayload(message, status, code) {
 }
 
 async function login(req, res) {
-  const { loginId, password, companyCode } = req.body;
+  const { loginId, password, companyCode, portal } = req.body;
 
   if (!loginId || !password) {
     return sendError(res, 'Login ID and password are required', 400);
   }
 
-  // TEMPORARY MOCK LOGIN: bypass MongoDB only for the known development credential pair.
-  if (process.env.NODE_ENV !== 'production' && isMockCredentialMatch(loginId, password)) {
-    const mockUser = buildMockClientAdminUser();
-    const token = buildToken(mockUser);
-
-    return sendSuccess(res, {
-      token,
-      user: {
-        ...sanitizeUser(mockUser),
-        mockLogin: true,
-      },
-    });
+  if (!portal || !AUTH_PORTAL_VALUES.includes(portal)) {
+    return sendError(res, 'Portal context is required', 400, 'PORTAL_REQUIRED');
   }
 
-  const resolved = await resolveLoginUser(loginId, companyCode);
+  const resolved = await resolveLoginCandidates(loginId, companyCode);
 
   if (resolved.error) {
     const { message, status, code } = resolved.error;
     return sendError(res, message, status, code);
   }
 
-  const user = resolved.user;
+  let user = null;
+
+  for (const candidate of resolved.candidates) {
+    const passwordMatch = await candidate.comparePassword(password);
+    if (passwordMatch) {
+      user = candidate;
+      break;
+    }
+  }
+
+  if (!user) {
+    return sendError(res, 'Invalid credentials', 401);
+  }
 
   if (user.status !== 'Active') {
     return sendError(res, 'Account is inactive', 403);
   }
 
-  const passwordMatch = await user.comparePassword(password);
-  if (!passwordMatch) {
-    return sendError(res, 'Invalid credentials', 401);
+  const portalCheck = assertPortalAccess(user, portal);
+  if (!portalCheck.allowed) {
+    return sendError(res, portalCheck.message, 403, portalCheck.code);
+  }
+
+  if (portal === AUTH_PORTALS.EMPLOYEE && !user.employeeId) {
+    return sendError(res, 'Employee profile link is missing', 403, 'EMPLOYEE_SCOPE_REQUIRED');
+  }
+
+  if (user.employeeId) {
+    const employee = await Employee.findById(user.employeeId).select('status');
+
+    if (!employee || employee.status !== 'Active') {
+      return sendError(res, 'Employee account is inactive', 403);
+    }
   }
 
   if (!user.roles.includes(ROLES.SUPER_ADMIN) && !user.companyId) {

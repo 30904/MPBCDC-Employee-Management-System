@@ -3,7 +3,7 @@
  * Prefer direct imports: require('../models/LoanApplication')
  */
 module.exports = {
-  MpbcdcEmployee: require('./MpbcdcEmployee'),
+  Employee: require('./Employee'),
   Department: require('./Department'),
   Designation: require('./Designation'),
   Grade: require('./Grade'),

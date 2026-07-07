@@ -10,7 +10,7 @@ function normalizeId(value) {
 }
 
 function resolveEmployeeScopeId(user) {
-  return normalizeId(user?.employeeId || user?.id);
+  return normalizeId(user?.employeeId);
 }
 
 function assertEmployeeSelfScope(req, res, next) {

@@ -5,7 +5,7 @@ const SalaryRevision = createTenantModel({
   modelName: 'SalaryRevision',
   collection: 'salary_revisions',
   fields: {
-    employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'MpbcdcEmployee' },
+    employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
     effectiveDate: { type: Date },
   },
 });

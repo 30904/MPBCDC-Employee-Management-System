@@ -5,7 +5,7 @@ const EmployeeDocument = createTenantModel({
   modelName: 'EmployeeDocument',
   collection: 'employee_documents',
   fields: {
-    employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'MpbcdcEmployee' },
+    employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
     category: { type: String, trim: true },
   },
 });

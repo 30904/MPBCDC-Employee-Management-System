@@ -6,7 +6,7 @@
 const LoanEligibilityRule = require('../models/LoanEligibilityRule');
 const LoanType = require('../models/LoanType');
 const LoanApplication = require('../models/LoanApplication');
-const MpbcdcEmployee = require('../models/MpbcdcEmployee');
+const Employee = require('../models/Employee');
 
 const ACTIVE_LOAN_STATUSES = ['Disbursed', 'Active'];
 
@@ -48,7 +48,7 @@ function calculateMonthlyEmi(principal, annualInterestRate, tenureMonths) {
 }
 
 /**
- * @param {object} employee — expects grossSalary, dateOfJoining, retirementDate
+ * @param {object} employee — expects grossSalary, joiningDate, retirementDate
  * @param {object} loanType — expects maxAmount, maxTenureMonths, interestRate, minServiceYears, salaryMultiplier
  * @param {number} requestedAmount
  * @param {number} requestedTenure — months
@@ -104,8 +104,8 @@ function calculateEligibility(
     reasons.push('Employee gross salary is required for eligibility');
   }
 
-  const serviceMonths = employee?.dateOfJoining
-    ? monthsBetween(employee.dateOfJoining, asOfDate)
+  const serviceMonths = employee?.joiningDate
+    ? monthsBetween(employee.joiningDate, asOfDate)
     : 0;
   derived.serviceMonths = serviceMonths;
 
@@ -226,7 +226,7 @@ async function previewEligibility({
   requestedTenure,
   asOfDate = new Date(),
 }) {
-  const employee = await MpbcdcEmployee.forTenant(companyId).findById(employeeId);
+  const employee = await Employee.findOne({ _id: employeeId, companyId });
   if (!employee) {
     return { eligible: false, reasons: ['Employee not found'], derived: {} };
   }

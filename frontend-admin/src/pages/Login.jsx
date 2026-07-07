@@ -21,7 +21,11 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await apiClient.post('/auth/login', { loginId, password });
+      const response = await apiClient.post('/auth/login', {
+        loginId,
+        password,
+        portal: 'admin',
+      });
       const payload = unwrapApiData(response);
 
       setToken(payload.token);

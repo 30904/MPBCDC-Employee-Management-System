@@ -1,4 +1,5 @@
 const LoanApplication = require('../models/LoanApplication');
+require('../models/Employee');
 const LoanDisbursement = require('../models/LoanDisbursement');
 const LoanEmiSchedule = require('../models/LoanEmiSchedule');
 const AppError = require('../utils/AppError');

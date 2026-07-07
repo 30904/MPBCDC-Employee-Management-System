@@ -1,6 +1,7 @@
 const express = require('express');
 const authRoutes = require('./authRoutes');
 const companyRoutes = require('./companyRoutes');
+const employeeRoutes = require('./employeeRoutes');
 const uploadRoutes = require('./uploadRoutes');
 const autoNumberRoutes = require('./autoNumberRoutes');
 const dateRoutes = require('./dateRoutes');
@@ -116,6 +117,7 @@ router.get('/health', (_req, res) => {
 
 router.use('/auth', authRoutes);
 router.use('/companies', companyRoutes);
+router.use('/employees', employeeRoutes);
 router.use('/uploads', uploadRoutes);
 router.use('/auto-numbers', autoNumberRoutes);
 router.use('/dates', dateRoutes);

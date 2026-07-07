@@ -13,7 +13,7 @@
     "seed:leave-accrual-rules": "node scripts/seedDefaultLeaveAccrualRules.js",
     "db:ensure:companies": "node scripts/ensureCompaniesCollection.js",
     "db:ensure:users": "node scripts/ensureUsersCollection.js",
-    "db:ensure:mpbcdc-employees": "node scripts/ensureMpbcdcEmployeesCollection.js",
+    "db:ensure:employees": "node scripts/ensureEmployeesCollection.js",
     "db:ensure:departments": "node scripts/ensureDepartmentsCollection.js",
     "db:ensure:designations": "node scripts/ensureDesignationsCollection.js",
     "db:ensure:grades": "node scripts/ensureGradesCollection.js",
