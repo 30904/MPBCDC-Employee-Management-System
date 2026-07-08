@@ -21,3 +21,8 @@ export async function fetchLoanApplications(params = {}) {
   const response = await apiClient.get(`/loan-applications${query ? `?${query}` : ''}`);
   return unwrapPaginatedData(response);
 }
+
+export async function fetchLoanApplication(applicationId) {
+  const response = await apiClient.get(`/loan-applications/${applicationId}`);
+  return unwrapApiData(response);
+}

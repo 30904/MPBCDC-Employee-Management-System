@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useCallback, useEffect, useState } from 'react';
 import { fetchLoanApplications } from '../../../api/loanApplicationsApi.js';
 import EmptyState from '../../../components/EmptyState.jsx';
@@ -132,6 +133,7 @@ export default function LoanApplications() {
                   <th>EMI</th>
                   <th>Status</th>
                   <th>Submitted</th>
+                  <th aria-label="Actions" />
                 </tr>
               </thead>
               <tbody>
@@ -147,6 +149,9 @@ export default function LoanApplications() {
                     <td>{formatCurrency(application.monthlyEmi)}</td>
                     <td>{application.status}</td>
                     <td>{formatDate(application.submittedAt || application.createdAt)}</td>
+                    <td className="table-actions">
+                      <Link to={`/transactions/loans/applications/${application._id}`}>View</Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

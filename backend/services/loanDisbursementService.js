@@ -6,8 +6,16 @@ const AppError = require('../utils/AppError');
 const { LOAN_APPLICATION_STATUS } = require('../constants/loanWorkflowStates');
 const { AUTO_NUMBER_PREFIXES } = require('../utils/autoNumberPrefixes');
 const autoNumberService = require('./autoNumberService');
-const { buildEmiSchedule } = require('./loanScheduleService');
+const { buildEmiSchedule, recalculateScheduleFromEmi } = require('./loanScheduleService');
+const { LOAN_INTEREST_FORMULAS } = require('../constants/loanInterestFormulas');
 const { parsePagination, executePaginatedQuery } = require('../utils/pagination');
+
+function resolveInterestFormula(application) {
+  return (
+    application?.eligibilitySnapshot?.derived?.interestFormula ||
+    LOAN_INTEREST_FORMULAS.COMPOUND_INTEREST
+  );
+}
 
 function tenantApplications(companyId) {
   return LoanApplication.forTenant(companyId);
@@ -114,11 +122,15 @@ async function disburseApplication({
     throw new AppError('disbursedAt must be a valid date', 400, 'VALIDATION_ERROR');
   }
 
-  const resolvedFirstEmiDate = resolveFirstEmiDate(disbursedOn, firstEmiDate);
+  const resolvedFirstEmiDate = resolveFirstEmiDate(
+    disbursedOn,
+    firstEmiDate || application.emiStartDate
+  );
   const loanNo = application.applicationNo;
   const tenureMonths = application.requestedTenureMonths;
   const principal = application.requestedAmount;
   const interestRate = application.interestRate ?? 0;
+  const interestFormula = resolveInterestFormula(application);
 
   const scheduleRows = buildEmiSchedule({
     loanNo,
@@ -126,6 +138,7 @@ async function disburseApplication({
     annualRate: interestRate,
     tenureMonths,
     startDate: resolvedFirstEmiDate,
+    interestFormula,
   });
 
   const { autoNumber: disbursementNo } = await autoNumberService.getNextAutoNumber(
@@ -143,6 +156,7 @@ async function disburseApplication({
     loanTypeId: application.loanTypeId,
     disbursedAmount: principal,
     interestRate,
+    interestFormula,
     tenureMonths,
     monthlyEmi,
     disbursedAt: disbursedOn,
@@ -180,9 +194,104 @@ async function disburseApplication({
   return { application, disbursement, schedule };
 }
 
+async function updateScheduleEmi({
+  companyId,
+  applicationId,
+  employeeId,
+  emiNo,
+  emiAmount,
+}) {
+  const application = await tenantApplications(companyId).findById(applicationId);
+
+  if (!application) {
+    throw new AppError('Loan application not found', 404, 'NOT_FOUND');
+  }
+
+  if (employeeId && String(application.employeeId) !== String(employeeId)) {
+    throw new AppError('You can only update your own loan schedule', 403, 'FORBIDDEN');
+  }
+
+  const disbursement = await tenantDisbursements(companyId).findOne({ applicationId });
+  if (!disbursement) {
+    throw new AppError('Loan has not been disbursed yet', 400, 'NOT_DISBURSED');
+  }
+
+  const parsedEmiNo = Number(emiNo);
+  if (!Number.isInteger(parsedEmiNo) || parsedEmiNo < 1) {
+    throw new AppError('emiNo must be a positive integer', 400, 'VALIDATION_ERROR');
+  }
+
+  const existingRows = await tenantSchedules(companyId)
+    .find({ applicationId })
+    .sort({ emiNo: 1 })
+    .lean();
+
+  if (!existingRows.length) {
+    throw new AppError('EMI schedule not found', 404, 'NOT_FOUND');
+  }
+
+  let recalculatedRows;
+
+  try {
+    recalculatedRows = recalculateScheduleFromEmi({
+      existingRows,
+      editedEmiNo: parsedEmiNo,
+      newEmiAmount: emiAmount,
+      principal: disbursement.disbursedAmount,
+      annualRate: disbursement.interestRate,
+      tenureMonths: disbursement.tenureMonths,
+      startDate: disbursement.firstEmiDate,
+      interestFormula: disbursement.interestFormula || resolveInterestFormula(application),
+      loanNo: disbursement.loanNo,
+    });
+  } catch (err) {
+    throw new AppError(err.message, 400, 'VALIDATION_ERROR');
+  }
+
+  const rowsToUpdate = recalculatedRows.filter((row) => row.emiNo >= parsedEmiNo);
+
+  await Promise.all(
+    rowsToUpdate.map((row) => {
+      const existing = existingRows.find((item) => item.emiNo === row.emiNo);
+
+      return tenantSchedules(companyId).findOneAndUpdate(
+        { _id: existing._id },
+        {
+          $set: {
+            emiAmount: row.emiAmount,
+            principalComponent: row.principalComponent,
+            interestComponent: row.interestComponent,
+            outstandingBalance: row.outstandingBalance,
+            isManuallyAdjusted: Boolean(row.isManuallyAdjusted),
+          },
+        },
+        { new: true }
+      );
+    })
+  );
+
+  const schedule = await tenantSchedules(companyId)
+    .find({ applicationId })
+    .sort({ emiNo: 1 });
+
+  if (schedule[0]) {
+    disbursement.monthlyEmi = schedule[0].emiAmount;
+    await disbursement.save();
+    application.monthlyEmi = schedule[0].emiAmount;
+    await application.save();
+  }
+
+  return {
+    application,
+    disbursement,
+    schedule,
+  };
+}
+
 module.exports = {
   listPendingDisbursements,
   listDisbursements,
   getScheduleForApplication,
   disburseApplication,
+  updateScheduleEmi,
 };

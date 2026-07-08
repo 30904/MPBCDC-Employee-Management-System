@@ -18,6 +18,8 @@ const LoanApplication = createTenantModel({
     purpose: { type: String, trim: true, maxlength: 500 },
     requestedAmount: { type: Number, min: 0 },
     requestedTenureMonths: { type: Number, min: 1 },
+    emiStartDate: { type: Date },
+    emiEndDate: { type: Date },
     interestRate: { type: Number, min: 0 },
     monthlyEmi: { type: Number, min: 0, default: 0 },
     status: {

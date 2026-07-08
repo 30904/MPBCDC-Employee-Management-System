@@ -3,7 +3,7 @@ const { sendSuccess } = require('../utils/apiResponse');
 const { previewEligibility } = require('../services/loanEligibilityService');
 
 async function previewLoanEligibility(req, res) {
-  const { loanTypeId, requestedAmount, requestedTenure } = req.query;
+  const { loanTypeId, requestedAmount, requestedTenure, emiStartDate } = req.query;
   const employeeId = req.selfScope?.employeeId;
 
   if (!employeeId) {
@@ -25,12 +25,20 @@ async function previewLoanEligibility(req, res) {
     throw new AppError('requestedTenure must be a positive integer', 400, 'VALIDATION_ERROR');
   }
 
+  if (emiStartDate) {
+    const parsedStart = new Date(emiStartDate);
+    if (Number.isNaN(parsedStart.getTime())) {
+      throw new AppError('emiStartDate must be a valid date', 400, 'VALIDATION_ERROR');
+    }
+  }
+
   const result = await previewEligibility({
     companyId: req.companyId,
     employeeId,
     loanTypeId,
     requestedAmount: amount,
     requestedTenure: tenure,
+    emiStartDate: emiStartDate || null,
   });
 
   return sendSuccess(res, result);

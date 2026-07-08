@@ -7,6 +7,7 @@ const LoanEligibilityRule = require('../models/LoanEligibilityRule');
 const LoanType = require('../models/LoanType');
 const LoanApplication = require('../models/LoanApplication');
 const Employee = require('../models/Employee');
+const { LOAN_INTEREST_FORMULAS } = require('../constants/loanInterestFormulas');
 
 const ACTIVE_LOAN_STATUSES = ['Disbursed', 'Active'];
 
@@ -25,16 +26,41 @@ function monthsBetween(start, end) {
   return (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
 }
 
+function computeEmiEndDate(emiStartDate, tenureMonths) {
+  const start = new Date(emiStartDate);
+  const tenure = Number(tenureMonths);
+
+  if (Number.isNaN(start.getTime()) || !tenure || tenure <= 0) {
+    return null;
+  }
+
+  const end = new Date(start);
+  end.setMonth(end.getMonth() + tenure - 1);
+  return end;
+}
+
 /**
- * Standard reducing-balance EMI (matches loanScheduleService).
+ * EMI by interest formula.
+ * SIMPLE_INTEREST: flat total interest, equal EMI.
+ * COMPOUND_INTEREST: standard reducing-balance EMI.
  */
-function calculateMonthlyEmi(principal, annualInterestRate, tenureMonths) {
+function calculateMonthlyEmi(
+  principal,
+  annualInterestRate,
+  tenureMonths,
+  formula = LOAN_INTEREST_FORMULAS.COMPOUND_INTEREST
+) {
   const amount = Number(principal);
   const tenure = Number(tenureMonths);
   const annualRate = Number(annualInterestRate) || 0;
 
   if (!amount || amount <= 0 || !tenure || tenure <= 0) {
     return 0;
+  }
+
+  if (formula === LOAN_INTEREST_FORMULAS.SIMPLE_INTEREST) {
+    const totalInterest = (amount * annualRate * tenure) / (12 * 100);
+    return (amount + totalInterest) / tenure;
   }
 
   const monthlyRate = annualRate / 12 / 100;
@@ -53,9 +79,10 @@ function calculateMonthlyEmi(principal, annualInterestRate, tenureMonths) {
  * @param {number} requestedAmount
  * @param {number} requestedTenure — months
  * @param {object} [options]
- * @param {object} [options.rule] — eligibility rule (maxEmiPercentOfGross, retirementBufferMonths, minServiceMonths, salaryMultiplier)
+ * @param {object} [options.rule] — eligibility rule
  * @param {number} [options.existingActiveLoanEmiTotal]
  * @param {Date} [options.asOfDate]
+ * @param {Date|string} [options.emiStartDate]
  */
 function calculateEligibility(
   employee,
@@ -68,6 +95,7 @@ function calculateEligibility(
     rule = {},
     existingActiveLoanEmiTotal = 0,
     asOfDate = new Date(),
+    emiStartDate = null,
   } = options;
 
   const reasons = [];
@@ -78,6 +106,12 @@ function calculateEligibility(
   const retirementBufferMonths = rule.retirementBufferMonths ?? 3;
   const minServiceMonths = rule.minServiceMonths ?? 0;
   const existingEmi = Number(existingActiveLoanEmiTotal) || 0;
+  const interestFormula = rule.interestFormula || LOAN_INTEREST_FORMULAS.COMPOUND_INTEREST;
+  const minTenureMonths = Number(rule.minTenureMonths) > 0 ? Number(rule.minTenureMonths) : 1;
+  const ruleMaxTenure =
+    rule.maxTenureMonths != null && rule.maxTenureMonths !== ''
+      ? Number(rule.maxTenureMonths)
+      : null;
 
   const derived = {
     grossSalary: grossSalary || null,
@@ -86,6 +120,8 @@ function calculateEligibility(
     maxEmiPercentOfGross: maxEmiPercent,
     retirementBufferMonths,
     existingActiveLoanEmiTotal: round2(existingEmi),
+    interestFormula,
+    minTenureMonths,
   };
 
   if (!loanType) {
@@ -119,27 +155,61 @@ function calculateEligibility(
   }
 
   let maxEligibleAmount = Number(loanType.maxAmount);
-  const salaryMultiplier =
-    rule.salaryMultiplier ?? loanType.salaryMultiplier ?? null;
+  let minEligibleAmount = 0;
+
+  const minAmountPercent = rule.minAmountPercentOfSalary;
+  const maxAmountPercent = rule.maxAmountPercentOfSalary;
+
+  if (minAmountPercent != null && minAmountPercent > 0 && grossSalary > 0) {
+    minEligibleAmount = grossSalary * (minAmountPercent / 100);
+    derived.minAmountPercentOfSalary = minAmountPercent;
+  }
+
+  if (maxAmountPercent != null && maxAmountPercent > 0 && grossSalary > 0) {
+    maxEligibleAmount = Math.min(maxEligibleAmount, grossSalary * (maxAmountPercent / 100));
+    derived.maxAmountPercentOfSalary = maxAmountPercent;
+  }
+
+  const salaryMultiplier = rule.salaryMultiplier ?? loanType.salaryMultiplier ?? null;
 
   if (salaryMultiplier != null && salaryMultiplier > 0 && grossSalary > 0) {
     maxEligibleAmount = Math.min(maxEligibleAmount, grossSalary * salaryMultiplier);
   }
 
+  derived.minEligibleAmount = round2(minEligibleAmount);
   derived.maxEligibleAmount = round2(maxEligibleAmount);
   derived.salaryMultiplier = salaryMultiplier;
+
+  if (amount < minEligibleAmount - 0.01) {
+    reasons.push(
+      `Requested amount is below minimum eligible amount (${derived.minEligibleAmount})${
+        minAmountPercent ? ` — ${minAmountPercent}% of salary` : ''
+      }`
+    );
+  }
 
   if (amount > maxEligibleAmount) {
     reasons.push(`Requested amount exceeds maximum eligible amount (${derived.maxEligibleAmount})`);
   }
 
-  const maxTenure = Number(loanType.maxTenureMonths);
+  const typeMaxTenure = Number(loanType.maxTenureMonths);
+  const maxTenure =
+    ruleMaxTenure != null && ruleMaxTenure > 0
+      ? Math.min(ruleMaxTenure, typeMaxTenure)
+      : typeMaxTenure;
+
+  derived.maxTenureMonths = maxTenure;
+
+  if (tenure < minTenureMonths) {
+    reasons.push(`Requested tenure must be at least ${minTenureMonths} months`);
+  }
+
   if (tenure > maxTenure) {
-    reasons.push(`Requested tenure exceeds maximum of ${maxTenure} months for this loan type`);
+    reasons.push(`Requested tenure exceeds maximum of ${maxTenure} months`);
   }
 
   const interestRate = Number(loanType.interestRate) || 0;
-  const proposedEmi = calculateMonthlyEmi(amount, interestRate, tenure);
+  const proposedEmi = calculateMonthlyEmi(amount, interestRate, tenure, interestFormula);
   derived.proposedEmi = round2(proposedEmi);
   derived.interestRate = interestRate;
 
@@ -167,7 +237,30 @@ function calculateEligibility(
     }
   }
 
-  if (!employee?.retirementDate) {
+  if (emiStartDate) {
+    const parsedStart = new Date(emiStartDate);
+    if (Number.isNaN(parsedStart.getTime())) {
+      reasons.push('EMI start date must be a valid date');
+    } else if (tenure > 0) {
+      const lastEmiDate = computeEmiEndDate(parsedStart, tenure);
+      derived.emiStartDate = parsedStart.toISOString();
+      derived.emiEndDate = lastEmiDate?.toISOString() ?? null;
+
+      if (employee?.retirementDate && lastEmiDate) {
+        const monthsBeforeRetirement = monthsBetween(lastEmiDate, employee.retirementDate);
+        derived.loanClosureDate = lastEmiDate.toISOString();
+        derived.monthsBeforeRetirementAtClosure = monthsBeforeRetirement;
+
+        if (monthsBeforeRetirement < retirementBufferMonths) {
+          reasons.push(
+            `Loan must close at least ${retirementBufferMonths} months before retirement date`
+          );
+        }
+      } else if (!employee?.retirementDate) {
+        reasons.push('Employee retirement date is required for loan eligibility');
+      }
+    }
+  } else if (!employee?.retirementDate) {
     reasons.push('Employee retirement date is required for loan eligibility');
   } else if (tenure > 0) {
     const lastEmiDate = new Date(asOfDate);
@@ -224,6 +317,7 @@ async function previewEligibility({
   loanTypeId,
   requestedAmount,
   requestedTenure,
+  emiStartDate = null,
   asOfDate = new Date(),
 }) {
   const employee = await Employee.findOne({ _id: employeeId, companyId });
@@ -256,6 +350,7 @@ async function previewEligibility({
       rule,
       existingActiveLoanEmiTotal,
       asOfDate,
+      emiStartDate,
     }
   );
 
@@ -277,6 +372,7 @@ module.exports = {
   ACTIVE_LOAN_STATUSES,
   calculateMonthlyEmi,
   calculateEligibility,
+  computeEmiEndDate,
   monthsBetween,
   round2,
   loadActiveEligibilityRule,

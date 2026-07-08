@@ -3,7 +3,11 @@ import PageHeader from './PageHeader.jsx';
 
 function isTabActive(pathname, tabPath, end) {
   if (end) {
-    return pathname.endsWith(tabPath) || pathname.endsWith(`${tabPath}/`);
+    return (
+      pathname.endsWith(tabPath) ||
+      pathname.endsWith(`${tabPath}/`) ||
+      pathname.includes(`/${tabPath}/`)
+    );
   }
 
   return pathname.includes(`/${tabPath}`);

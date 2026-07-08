@@ -80,6 +80,29 @@ async function repaymentSchedule(req, res) {
   return sendSuccess(res, result);
 }
 
+async function updateRepaymentScheduleEmi(req, res) {
+  const employeeId = req.selfScope?.employeeId;
+
+  if (!employeeId) {
+    throw new AppError('Employee context is required', 403, 'EMPLOYEE_SCOPE_REQUIRED');
+  }
+
+  const emiAmount = Number(req.body?.emiAmount);
+  if (!Number.isFinite(emiAmount) || emiAmount < 0) {
+    throw new AppError('emiAmount must be zero or greater', 400, 'VALIDATION_ERROR');
+  }
+
+  const result = await loanDisbursementService.updateScheduleEmi({
+    companyId: req.companyId,
+    applicationId: req.params.id,
+    employeeId,
+    emiNo: req.params.emiNo,
+    emiAmount,
+  });
+
+  return sendSuccess(res, result);
+}
+
 module.exports = {
   applyLeave,
   leaveHistory,
@@ -87,4 +110,5 @@ module.exports = {
   applyLoan,
   appliedLoans,
   repaymentSchedule,
+  updateRepaymentScheduleEmi,
 };

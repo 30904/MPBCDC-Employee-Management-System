@@ -10,9 +10,10 @@ const LoanEmiSchedule = createTenantModel({
     emiNo: { type: Number, min: 1 },
     dueDate: { type: Date },
     emiAmount: { type: Number, min: 0 },
-    principalComponent: { type: Number, min: 0 },
+    principalComponent: { type: Number },
     interestComponent: { type: Number, min: 0 },
     outstandingBalance: { type: Number, min: 0 },
+    isManuallyAdjusted: { type: Boolean, default: false },
     status: {
       type: String,
       trim: true,

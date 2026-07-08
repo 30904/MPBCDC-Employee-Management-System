@@ -9,6 +9,8 @@ const autoNumberService = require('./autoNumberService');
 const {
   previewEligibility,
   calculateMonthlyEmi,
+  computeEmiEndDate,
+  loadActiveEligibilityRule,
   round2,
 } = require('./loanEligibilityService');
 const { parsePagination, executePaginatedQuery } = require('../utils/pagination');
@@ -32,7 +34,7 @@ function normalizeAttachments(attachments) {
 }
 
 function validateCreatePayload(body) {
-  const { loanTypeId, requestedAmount, requestedTenureMonths, purpose } = body;
+  const { loanTypeId, requestedAmount, requestedTenureMonths, purpose, emiStartDate } = body;
 
   if (!loanTypeId || !mongoose.Types.ObjectId.isValid(loanTypeId)) {
     throw new AppError('loanTypeId is required', 400, 'VALIDATION_ERROR');
@@ -53,11 +55,27 @@ function validateCreatePayload(body) {
     );
   }
 
+  if (!emiStartDate) {
+    throw new AppError('emiStartDate is required', 400, 'VALIDATION_ERROR');
+  }
+
+  const parsedEmiStart = new Date(emiStartDate);
+  if (Number.isNaN(parsedEmiStart.getTime())) {
+    throw new AppError('emiStartDate must be a valid date', 400, 'VALIDATION_ERROR');
+  }
+
+  const emiEndDate = computeEmiEndDate(parsedEmiStart, tenure);
+  if (!emiEndDate) {
+    throw new AppError('emiEndDate could not be derived from emiStartDate and tenure', 400, 'VALIDATION_ERROR');
+  }
+
   return {
     loanTypeId,
     requestedAmount: amount,
     requestedTenureMonths: tenure,
     purpose: purpose ? String(purpose).trim() : '',
+    emiStartDate: parsedEmiStart,
+    emiEndDate,
   };
 }
 
@@ -83,7 +101,11 @@ async function createDraft({ companyId, employeeId, payload }) {
     loanTypeId: parsed.loanTypeId,
     requestedAmount: parsed.requestedAmount,
     requestedTenure: parsed.requestedTenureMonths,
+    emiStartDate: parsed.emiStartDate,
   });
+
+  const rule = await loadActiveEligibilityRule(companyId);
+  const interestFormula = rule?.interestFormula;
 
   const { autoNumber } = await autoNumberService.getNextAutoNumber(
     companyId,
@@ -92,7 +114,12 @@ async function createDraft({ companyId, employeeId, payload }) {
 
   const interestRate = Number(loanType.interestRate) || 0;
   const monthlyEmi = round2(
-    calculateMonthlyEmi(parsed.requestedAmount, interestRate, parsed.requestedTenureMonths)
+    calculateMonthlyEmi(
+      parsed.requestedAmount,
+      interestRate,
+      parsed.requestedTenureMonths,
+      interestFormula
+    )
   );
 
   return tenantApplications(companyId).create({
@@ -102,6 +129,8 @@ async function createDraft({ companyId, employeeId, payload }) {
     purpose: parsed.purpose,
     requestedAmount: parsed.requestedAmount,
     requestedTenureMonths: parsed.requestedTenureMonths,
+    emiStartDate: parsed.emiStartDate,
+    emiEndDate: parsed.emiEndDate,
     interestRate,
     monthlyEmi,
     status: LOAN_APPLICATION_STATUS.DRAFT,
@@ -136,6 +165,7 @@ async function submitApplication({ companyId, employeeId, applicationId }) {
     loanTypeId: application.loanTypeId,
     requestedAmount: application.requestedAmount,
     requestedTenure: application.requestedTenureMonths,
+    emiStartDate: application.emiStartDate,
   });
 
   if (!eligibility.eligible) {
@@ -146,6 +176,9 @@ async function submitApplication({ companyId, employeeId, applicationId }) {
     );
   }
 
+  const rule = await loadActiveEligibilityRule(companyId);
+  const interestFormula = rule?.interestFormula;
+
   application.status = LOAN_APPLICATION_STATUS.SUBMITTED;
   application.submittedAt = new Date();
   application.eligibilityRuleCode = eligibility.ruleCode || application.eligibilityRuleCode;
@@ -154,7 +187,8 @@ async function submitApplication({ companyId, employeeId, applicationId }) {
     calculateMonthlyEmi(
       application.requestedAmount,
       application.interestRate,
-      application.requestedTenureMonths
+      application.requestedTenureMonths,
+      interestFormula
     )
   );
 

@@ -277,6 +277,39 @@ a {
   font-weight: 600;
 }
 
+.table-actions {
+  white-space: nowrap;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #16a34a;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.secondary-btn {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  background: #fff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.emi-edit-input {
+  width: 7rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+}
+
 .btn-sm {
   display: inline-block;
   padding: 0.35rem 0.75rem;

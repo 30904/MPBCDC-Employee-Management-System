@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import ModuleShell from '../../../components/ModuleShell.jsx';
 import LoanApplications from './LoanApplications.jsx';
+import LoanApplicationDetails from './LoanApplicationDetails.jsx';
 import LoanApprovalQueue from './LoanApprovalQueue.jsx';
 import LoanDisbursement from './LoanDisbursement.jsx';
 import LoanRecoveryRegister from './LoanRecoveryRegister.jsx';
@@ -28,6 +29,7 @@ export default function LoanTransactions() {
       >
         <Route index element={<Navigate to="applications" replace />} />
         <Route path="applications" element={<LoanApplications />} />
+        <Route path="applications/:id" element={<LoanApplicationDetails />} />
         <Route path="approvals" element={<LoanApprovalQueue />} />
         <Route path="disbursement" element={<LoanDisbursement />} />
         <Route path="emi-schedule" element={<EmiScheduleView />} />

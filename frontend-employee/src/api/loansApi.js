@@ -6,12 +6,22 @@ export async function fetchActiveLoanTypes() {
   return unwrapApiData(response);
 }
 
-export async function previewLoanEligibility({ loanTypeId, requestedAmount, requestedTenure }) {
+export async function previewLoanEligibility({
+  loanTypeId,
+  requestedAmount,
+  requestedTenure,
+  emiStartDate,
+}) {
   const params = new URLSearchParams({
     loanTypeId,
     requestedAmount: String(requestedAmount),
     requestedTenure: String(requestedTenure),
   });
+
+  if (emiStartDate) {
+    params.set('emiStartDate', emiStartDate);
+  }
+
   const response = await apiClient.get(`/loans/preview-eligibility?${params}`);
   return unwrapApiData(response);
 }
@@ -34,5 +44,12 @@ export async function fetchMyLoanApplications(params = {}) {
 
 export async function fetchLoanRepaymentSchedule(applicationId) {
   const response = await apiClient.get(`/loans/${applicationId}/schedule`);
+  return unwrapApiData(response);
+}
+
+export async function updateLoanRepaymentScheduleEmi(applicationId, emiNo, emiAmount) {
+  const response = await apiClient.put(`/loans/${applicationId}/schedule/${emiNo}`, {
+    emiAmount,
+  });
   return unwrapApiData(response);
 }

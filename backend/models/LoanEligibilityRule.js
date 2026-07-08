@@ -1,4 +1,5 @@
 const createTenantModel = require('./createTenantModel');
+const { LOAN_INTEREST_FORMULA_VALUES } = require('../constants/loanInterestFormulas');
 
 const RULE_STATUSES = ['Active', 'Inactive'];
 
@@ -25,6 +26,33 @@ const LoanEligibilityRule = createTenantModel({
       type: Number,
       default: null,
       min: [0, 'salaryMultiplier cannot be negative'],
+    },
+    minAmountPercentOfSalary: {
+      type: Number,
+      default: null,
+      min: [0, 'minAmountPercentOfSalary cannot be negative'],
+      max: [100, 'minAmountPercentOfSalary cannot exceed 100'],
+    },
+    maxAmountPercentOfSalary: {
+      type: Number,
+      default: null,
+      min: [0, 'maxAmountPercentOfSalary cannot be negative'],
+      max: [100, 'maxAmountPercentOfSalary cannot exceed 100'],
+    },
+    minTenureMonths: {
+      type: Number,
+      default: 1,
+      min: [1, 'minTenureMonths must be at least 1'],
+    },
+    maxTenureMonths: {
+      type: Number,
+      default: null,
+      min: [1, 'maxTenureMonths must be at least 1'],
+    },
+    interestFormula: {
+      type: String,
+      enum: LOAN_INTEREST_FORMULA_VALUES,
+      default: 'COMPOUND_INTEREST',
     },
     maxEmiPercentOfGross: {
       type: Number,

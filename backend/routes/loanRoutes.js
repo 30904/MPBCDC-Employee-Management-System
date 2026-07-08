@@ -20,6 +20,7 @@ router.get('/types', asyncHandler(loanTypeController.listActiveLoanTypesForEss))
 router.get('/preview-eligibility', asyncHandler(loanEligibilityController.previewLoanEligibility));
 router.post('/apply', asyncHandler(loanController.applyLoan));
 router.get('/applied', asyncHandler(loanController.appliedLoans));
+router.put('/:id/schedule/:emiNo', asyncHandler(loanController.updateRepaymentScheduleEmi));
 router.get('/:id/schedule', asyncHandler(loanController.repaymentSchedule));
 
 module.exports = router;

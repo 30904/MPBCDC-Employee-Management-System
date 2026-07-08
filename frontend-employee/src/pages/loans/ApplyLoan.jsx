@@ -13,12 +13,41 @@ function formatCurrency(amount) {
   return `₹${Number(amount).toLocaleString('en-IN')}`;
 }
 
+function computeEmiEndDate(startDate, tenureMonths) {
+  if (!startDate || !tenureMonths) {
+    return '';
+  }
+
+  const end = new Date(startDate);
+  const tenure = Number(tenureMonths);
+
+  if (Number.isNaN(end.getTime()) || !Number.isFinite(tenure) || tenure <= 0) {
+    return '';
+  }
+
+  end.setMonth(end.getMonth() + tenure - 1);
+  return end.toISOString().slice(0, 10);
+}
+
+function formatInterestFormula(value) {
+  if (value === 'SIMPLE_INTEREST') {
+    return 'Simple Interest';
+  }
+
+  if (value === 'COMPOUND_INTEREST') {
+    return 'Compound Interest';
+  }
+
+  return value || '—';
+}
+
 export default function ApplyLoan() {
   const navigate = useNavigate();
   const [loanTypes, setLoanTypes] = useState([]);
   const [selectedId, setSelectedId] = useState('');
   const [requestedAmount, setRequestedAmount] = useState('');
   const [requestedTenure, setRequestedTenure] = useState('');
+  const [emiStartDate, setEmiStartDate] = useState('');
   const [purpose, setPurpose] = useState('');
   const [attachmentFile, setAttachmentFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -68,11 +97,30 @@ export default function ApplyLoan() {
     [loanTypes, selectedId]
   );
 
+  const emiEndDate = useMemo(
+    () => computeEmiEndDate(emiStartDate, requestedTenure),
+    [emiStartDate, requestedTenure]
+  );
+
+  const tenureBounds = useMemo(() => {
+    const min = preview?.derived?.minTenureMonths ?? 1;
+    const max = preview?.derived?.maxTenureMonths ?? selectedType?.maxTenureMonths ?? null;
+
+    return { min, max };
+  }, [preview, selectedType]);
+
   useEffect(() => {
     const amount = Number(requestedAmount);
     const tenure = Number(requestedTenure);
 
-    if (!selectedId || !Number.isFinite(amount) || amount <= 0 || !Number.isFinite(tenure) || tenure <= 0) {
+    if (
+      !selectedId ||
+      !emiStartDate ||
+      !Number.isFinite(amount) ||
+      amount <= 0 ||
+      !Number.isFinite(tenure) ||
+      tenure <= 0
+    ) {
       setPreview(null);
       setPreviewError('');
       return undefined;
@@ -88,6 +136,7 @@ export default function ApplyLoan() {
           loanTypeId: selectedId,
           requestedAmount: amount,
           requestedTenure: tenure,
+          emiStartDate,
         });
 
         if (!cancelled) {
@@ -109,7 +158,7 @@ export default function ApplyLoan() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [selectedId, requestedAmount, requestedTenure]);
+  }, [selectedId, requestedAmount, requestedTenure, emiStartDate]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -118,6 +167,11 @@ export default function ApplyLoan() {
 
     if (!preview?.eligible) {
       setSubmitError('Resolve eligibility issues before submitting.');
+      return;
+    }
+
+    if (!emiStartDate) {
+      setSubmitError('EMI start date is required.');
       return;
     }
 
@@ -141,6 +195,7 @@ export default function ApplyLoan() {
         loanTypeId: selectedId,
         requestedAmount: Number(requestedAmount),
         requestedTenureMonths: Number(requestedTenure),
+        emiStartDate,
         purpose: purpose.trim(),
         attachments,
       });
@@ -224,13 +279,31 @@ export default function ApplyLoan() {
                 Tenure (months)
                 <input
                   type="number"
-                  min="1"
+                  min={tenureBounds.min}
+                  max={tenureBounds.max ?? undefined}
                   step="1"
                   value={requestedTenure}
                   onChange={(e) => setRequestedTenure(e.target.value)}
-                  placeholder="e.g. 60"
+                  placeholder={
+                    tenureBounds.max
+                      ? `e.g. ${tenureBounds.min}–${tenureBounds.max}`
+                      : `e.g. ${tenureBounds.min}+`
+                  }
                   required
                 />
+              </label>
+              <label>
+                EMI Start Date
+                <input
+                  type="date"
+                  value={emiStartDate}
+                  onChange={(e) => setEmiStartDate(e.target.value)}
+                  required
+                />
+              </label>
+              <label>
+                EMI End Date
+                <input type="date" value={emiEndDate} readOnly disabled />
               </label>
             </div>
 
@@ -279,8 +352,31 @@ export default function ApplyLoan() {
                 {preview.derived && (
                   <div className="eligibility-derived">
                     <p>
+                      <strong>Interest formula:</strong>{' '}
+                      {formatInterestFormula(preview.derived.interestFormula)}
+                    </p>
+                    <p>
                       <strong>Proposed EMI:</strong> {formatCurrency(preview.derived.proposedEmi)}
                     </p>
+                    <p>
+                      <strong>Min eligible amount:</strong>{' '}
+                      {formatCurrency(preview.derived.minEligibleAmount)}
+                    </p>
+                    <p>
+                      <strong>Max eligible amount:</strong>{' '}
+                      {formatCurrency(preview.derived.maxEligibleAmount)}
+                    </p>
+                    <p>
+                      <strong>Tenure range:</strong>{' '}
+                      {preview.derived.minTenureMonths} – {preview.derived.maxTenureMonths} months
+                    </p>
+                    {preview.derived.emiStartDate && (
+                      <p>
+                        <strong>EMI period:</strong>{' '}
+                        {preview.derived.emiStartDate.slice(0, 10)} to{' '}
+                        {preview.derived.emiEndDate?.slice(0, 10) ?? '—'}
+                      </p>
+                    )}
                     <p>
                       <strong>Total EMI after application:</strong>{' '}
                       {formatCurrency(preview.derived.totalEmiAfterApplication)}
@@ -288,10 +384,6 @@ export default function ApplyLoan() {
                     <p>
                       <strong>Max allowed EMI:</strong>{' '}
                       {formatCurrency(preview.derived.maxAllowedEmi)}
-                    </p>
-                    <p>
-                      <strong>Max eligible amount:</strong>{' '}
-                      {formatCurrency(preview.derived.maxEligibleAmount)}
                     </p>
                     <p>
                       <strong>Retain after EMI:</strong>{' '}

@@ -487,6 +487,51 @@ a {
   margin-top: 1rem;
 }
 
+.attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.attachment-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.attachment-name {
+  color: #1e293b;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.attachment-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.attachment-download {
+  text-decoration: none;
+}
+
+.card h4 {
+  margin: 1.5rem 0 0.75rem;
+  color: #1e293b;
+  font-size: 1rem;
+}
+
+.card h4:first-of-type {
+  margin-top: 0;
+}
+
 @media (max-width: 768px) {
   .section-header {
     flex-direction: column;
@@ -501,6 +546,20 @@ a {
   .btn-sm {
     margin-left: 0;
     margin-top: 0.25rem;
+  }
+
+  .attachment-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .attachment-actions {
+    width: 100%;
+  }
+
+  .attachment-actions .btn-sm {
+    flex: 1;
+    text-align: center;
   }
 
   .form-actions {

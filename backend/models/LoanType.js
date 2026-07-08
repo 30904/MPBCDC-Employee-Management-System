@@ -1,4 +1,5 @@
 const createTenantModel = require('./createTenantModel');
+const { LOAN_INTEREST_FORMULA_VALUES } = require('../constants/loanInterestFormulas');
 
 const loanCategoryFlag = { type: Boolean, default: false };
 
@@ -35,6 +36,11 @@ const LoanType = createTenantModel({
       type: Number,
       required: [true, 'Maximum tenure in months is required'],
       min: [1, 'maxTenureMonths must be at least 1'],
+    },
+    interestFormula: {
+      type: String,
+      enum: LOAN_INTEREST_FORMULA_VALUES,
+      default: 'COMPOUND_INTEREST',
     },
     interestRate: {
       type: Number,

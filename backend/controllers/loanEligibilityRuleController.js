@@ -1,5 +1,6 @@
 const LoanEligibilityRule = require('../models/LoanEligibilityRule');
 const AppError = require('../utils/AppError');
+const { LOAN_INTEREST_FORMULA_VALUES } = require('../constants/loanInterestFormulas');
 const { sendSuccess, sendPaginatedSuccess } = require('../utils/apiResponse');
 const { parsePagination, executePaginatedQuery } = require('../utils/pagination');
 
@@ -7,6 +8,11 @@ const WRITABLE_FIELDS = [
   'ruleCode',
   'minServiceMonths',
   'salaryMultiplier',
+  'minAmountPercentOfSalary',
+  'maxAmountPercentOfSalary',
+  'minTenureMonths',
+  'maxTenureMonths',
+  'interestFormula',
   'maxEmiPercentOfGross',
   'retirementBufferMonths',
   'effectiveDate',
@@ -37,6 +43,35 @@ function pickRulePayload(body, { partial = false } = {}) {
     if (Number.isNaN(payload.effectiveDate.getTime())) {
       throw new AppError('effectiveDate must be a valid date', 400, 'VALIDATION_ERROR');
     }
+  }
+
+  if (
+    payload.interestFormula !== undefined &&
+    !LOAN_INTEREST_FORMULA_VALUES.includes(payload.interestFormula)
+  ) {
+    throw new AppError('interestFormula must be SIMPLE_INTEREST or COMPOUND_INTEREST', 400, 'VALIDATION_ERROR');
+  }
+
+  const minTenure = payload.minTenureMonths;
+  const maxTenure = payload.maxTenureMonths;
+  if (minTenure !== undefined && maxTenure !== undefined && maxTenure < minTenure) {
+    throw new AppError('maxTenureMonths cannot be less than minTenureMonths', 400, 'VALIDATION_ERROR');
+  }
+
+  const minAmountPct = payload.minAmountPercentOfSalary;
+  const maxAmountPct = payload.maxAmountPercentOfSalary;
+  if (
+    minAmountPct !== undefined &&
+    maxAmountPct !== undefined &&
+    minAmountPct !== null &&
+    maxAmountPct !== null &&
+    maxAmountPct < minAmountPct
+  ) {
+    throw new AppError(
+      'maxAmountPercentOfSalary cannot be less than minAmountPercentOfSalary',
+      400,
+      'VALIDATION_ERROR'
+    );
   }
 
   if (!partial) {

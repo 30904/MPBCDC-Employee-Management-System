@@ -1,6 +1,7 @@
 const LoanType = require('../models/LoanType');
 const LoanApplication = require('../models/LoanApplication');
 const AppError = require('../utils/AppError');
+const { LOAN_INTEREST_FORMULA_VALUES } = require('../constants/loanInterestFormulas');
 const { sendSuccess, sendPaginatedSuccess } = require('../utils/apiResponse');
 const { parsePagination, executePaginatedQuery } = require('../utils/pagination');
 
@@ -14,6 +15,7 @@ const WRITABLE_FIELDS = [
   'isMarriageLoan',
   'maxAmount',
   'maxTenureMonths',
+  'interestFormula',
   'interestRate',
   'minServiceYears',
   'salaryMultiplier',
@@ -41,6 +43,17 @@ function pickLoanTypePayload(body, { partial = false } = {}) {
 
   if (payload.name !== undefined) {
     payload.name = String(payload.name).trim();
+  }
+
+  if (
+    payload.interestFormula !== undefined &&
+    !LOAN_INTEREST_FORMULA_VALUES.includes(payload.interestFormula)
+  ) {
+    throw new AppError(
+      'interestFormula must be SIMPLE_INTEREST or COMPOUND_INTEREST',
+      400,
+      'VALIDATION_ERROR'
+    );
   }
 
   if (!partial) {

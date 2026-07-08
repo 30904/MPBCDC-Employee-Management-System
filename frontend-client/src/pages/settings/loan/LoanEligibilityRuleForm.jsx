@@ -1,10 +1,20 @@
 import { useEffect, useState } from 'react';
 import { getApiErrorMessage } from '../../../utils/apiError.js';
 
+const INTEREST_FORMULA_OPTIONS = [
+  { value: 'COMPOUND_INTEREST', label: 'Compound Interest' },
+  { value: 'SIMPLE_INTEREST', label: 'Simple Interest' },
+];
+
 const EMPTY_FORM = {
   ruleCode: 'DEFAULT',
   minServiceMonths: '0',
   salaryMultiplier: '',
+  minAmountPercentOfSalary: '',
+  maxAmountPercentOfSalary: '',
+  minTenureMonths: '1',
+  maxTenureMonths: '',
+  interestFormula: 'COMPOUND_INTEREST',
   maxEmiPercentOfGross: '60',
   retirementBufferMonths: '3',
   effectiveDate: '',
@@ -24,6 +34,14 @@ function toDateInputValue(value) {
   return date.toISOString().slice(0, 10);
 }
 
+function toOptionalNumberString(value) {
+  if (value === null || value === undefined || value === '') {
+    return '';
+  }
+
+  return String(value);
+}
+
 function toFormValues(initialValues) {
   if (!initialValues) {
     return { ...EMPTY_FORM };
@@ -35,10 +53,15 @@ function toFormValues(initialValues) {
       initialValues.minServiceMonths === undefined || initialValues.minServiceMonths === null
         ? '0'
         : String(initialValues.minServiceMonths),
-    salaryMultiplier:
-      initialValues.salaryMultiplier === null || initialValues.salaryMultiplier === undefined
-        ? ''
-        : String(initialValues.salaryMultiplier),
+    salaryMultiplier: toOptionalNumberString(initialValues.salaryMultiplier),
+    minAmountPercentOfSalary: toOptionalNumberString(initialValues.minAmountPercentOfSalary),
+    maxAmountPercentOfSalary: toOptionalNumberString(initialValues.maxAmountPercentOfSalary),
+    minTenureMonths:
+      initialValues.minTenureMonths === undefined || initialValues.minTenureMonths === null
+        ? '1'
+        : String(initialValues.minTenureMonths),
+    maxTenureMonths: toOptionalNumberString(initialValues.maxTenureMonths),
+    interestFormula: initialValues.interestFormula ?? 'COMPOUND_INTEREST',
     maxEmiPercentOfGross:
       initialValues.maxEmiPercentOfGross === undefined || initialValues.maxEmiPercentOfGross === null
         ? '60'
@@ -57,6 +80,8 @@ function buildPayload(form) {
   const payload = {
     ruleCode: form.ruleCode.trim().toUpperCase() || 'DEFAULT',
     minServiceMonths: Number(form.minServiceMonths || 0),
+    minTenureMonths: Number(form.minTenureMonths || 1),
+    interestFormula: form.interestFormula,
     maxEmiPercentOfGross: Number(form.maxEmiPercentOfGross || 60),
     retirementBufferMonths: Number(form.retirementBufferMonths || 3),
     effectiveDate: form.effectiveDate,
@@ -65,6 +90,18 @@ function buildPayload(form) {
 
   if (form.salaryMultiplier !== '') {
     payload.salaryMultiplier = Number(form.salaryMultiplier);
+  }
+
+  if (form.minAmountPercentOfSalary !== '') {
+    payload.minAmountPercentOfSalary = Number(form.minAmountPercentOfSalary);
+  }
+
+  if (form.maxAmountPercentOfSalary !== '') {
+    payload.maxAmountPercentOfSalary = Number(form.maxAmountPercentOfSalary);
+  }
+
+  if (form.maxTenureMonths !== '') {
+    payload.maxTenureMonths = Number(form.maxTenureMonths);
   }
 
   return payload;
@@ -154,6 +191,66 @@ export default function LoanEligibilityRuleForm({
           />
         </label>
         <label>
+          Min Loan Amount (% of salary)
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="0.1"
+            value={form.minAmountPercentOfSalary}
+            onChange={(e) => updateField('minAmountPercentOfSalary', e.target.value)}
+            placeholder="e.g. 10"
+          />
+        </label>
+        <label>
+          Max Loan Amount (% of salary)
+          <input
+            type="number"
+            min="0"
+            max="100"
+            step="0.1"
+            value={form.maxAmountPercentOfSalary}
+            onChange={(e) => updateField('maxAmountPercentOfSalary', e.target.value)}
+            placeholder="e.g. 80"
+          />
+        </label>
+        <label>
+          Min Tenure (months)
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value={form.minTenureMonths}
+            onChange={(e) => updateField('minTenureMonths', e.target.value)}
+            required
+          />
+        </label>
+        <label>
+          Max Tenure (months, optional)
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value={form.maxTenureMonths}
+            onChange={(e) => updateField('maxTenureMonths', e.target.value)}
+            placeholder="Uses loan type max if empty"
+          />
+        </label>
+        <label>
+          Interest Rate Formula
+          <select
+            value={form.interestFormula}
+            onChange={(e) => updateField('interestFormula', e.target.value)}
+            required
+          >
+            {INTEREST_FORMULA_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
           Max EMI % of Gross
           <input
             type="number"
@@ -186,8 +283,8 @@ export default function LoanEligibilityRuleForm({
       </div>
 
       <p className="placeholder-text">
-        Rules apply company-wide. EMI cap, 40% retain-after-EMI, and retirement buffer are enforced
-        during employee eligibility preview.
+        Rules apply company-wide. Loan amount %, tenure bounds, interest formula, EMI cap, and
+        retirement buffer are enforced during employee eligibility preview.
       </p>
 
       <div className="form-actions">

@@ -9,6 +9,11 @@ const CATEGORY_FIELDS = [
   { key: 'isMarriageLoan', label: 'Marriage Loan' },
 ];
 
+const INTEREST_FORMULA_OPTIONS = [
+  { value: 'COMPOUND_INTEREST', label: 'Compound Interest' },
+  { value: 'SIMPLE_INTEREST', label: 'Simple Interest' },
+];
+
 const EMPTY_FORM = {
   code: '',
   name: '',
@@ -19,6 +24,7 @@ const EMPTY_FORM = {
   isMarriageLoan: false,
   maxAmount: '',
   maxTenureMonths: '',
+  interestFormula: 'COMPOUND_INTEREST',
   interestRate: '',
   minServiceYears: '0',
   salaryMultiplier: '',
@@ -40,6 +46,7 @@ function toFormValues(initialValues) {
     isMarriageLoan: Boolean(initialValues.isMarriageLoan),
     maxAmount: initialValues.maxAmount ?? '',
     maxTenureMonths: initialValues.maxTenureMonths ?? '',
+    interestFormula: initialValues.interestFormula ?? 'COMPOUND_INTEREST',
     interestRate: initialValues.interestRate ?? '',
     minServiceYears:
       initialValues.minServiceYears === undefined || initialValues.minServiceYears === null
@@ -64,6 +71,7 @@ function buildPayload(form) {
     isMarriageLoan: form.isMarriageLoan,
     maxAmount: Number(form.maxAmount),
     maxTenureMonths: Number(form.maxTenureMonths),
+    interestFormula: form.interestFormula,
     interestRate: Number(form.interestRate),
     minServiceYears: Number(form.minServiceYears || 0),
     isActive: form.isActive,
@@ -167,6 +175,20 @@ export default function LoanTypeForm({
             required
             placeholder="60"
           />
+        </label>
+        <label>
+          Interest Rate Formula
+          <select
+            value={form.interestFormula}
+            onChange={(e) => updateField('interestFormula', e.target.value)}
+            required
+          >
+            {INTEREST_FORMULA_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           Interest Rate (%)

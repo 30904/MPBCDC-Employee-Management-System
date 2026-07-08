@@ -10,6 +10,18 @@ import StatusBadge from '../../../components/StatusBadge.jsx';
 import { getApiErrorMessage } from '../../../utils/apiError.js';
 import LoanEligibilityRuleForm from './LoanEligibilityRuleForm.jsx';
 
+function formatInterestFormula(value) {
+  if (value === 'SIMPLE_INTEREST') {
+    return 'Simple Interest';
+  }
+
+  if (value === 'COMPOUND_INTEREST') {
+    return 'Compound Interest';
+  }
+
+  return value || '—';
+}
+
 function formatDate(value) {
   if (!value) {
     return '—';
@@ -116,8 +128,8 @@ export default function LoanEligibilityConfig() {
         <div>
           <h3>Eligibility Rules</h3>
           <p className="placeholder-text">
-            Configure tenure, EMI cap, and retirement buffer used when employees preview loan
-            eligibility.
+            Configure loan amount %, tenure bounds, interest formula, EMI cap, and retirement buffer
+            used when employees preview loan eligibility.
           </p>
         </div>
         {!showForm && (
@@ -161,6 +173,9 @@ export default function LoanEligibilityConfig() {
                   <th>Code</th>
                   <th>Effective</th>
                   <th>Min Service</th>
+                  <th>Amount %</th>
+                  <th>Tenure</th>
+                  <th>Formula</th>
                   <th>Max EMI %</th>
                   <th>Retirement Buffer</th>
                   <th>Salary Mult.</th>
@@ -176,6 +191,13 @@ export default function LoanEligibilityConfig() {
                     </td>
                     <td>{formatDate(rule.effectiveDate)}</td>
                     <td>{rule.minServiceMonths} mo</td>
+                    <td>
+                      {rule.minAmountPercentOfSalary ?? '—'} – {rule.maxAmountPercentOfSalary ?? '—'}%
+                    </td>
+                    <td>
+                      {rule.minTenureMonths ?? 1} – {rule.maxTenureMonths ?? 'type max'} mo
+                    </td>
+                    <td>{formatInterestFormula(rule.interestFormula)}</td>
                     <td>{rule.maxEmiPercentOfGross}%</td>
                     <td>{rule.retirementBufferMonths} mo</td>
                     <td>{rule.salaryMultiplier ?? '—'}</td>
