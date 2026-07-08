@@ -14,6 +14,7 @@ router.use(tenantResolver);
 router.use(authorizeRoles(ROLES.CLIENT_ADMIN));
 
 router.get('/leave-type-options', asyncHandler(leaveAccrualRuleController.listLeaveTypeOptions));
+router.post('/run', asyncHandler(leaveAccrualRuleController.runAccrual));
 router.get('/', validatePaginationMiddleware, asyncHandler(leaveAccrualRuleController.listAccrualRules));
 router.post('/', asyncHandler(leaveAccrualRuleController.createAccrualRule));
 router.get('/:id', asyncHandler(leaveAccrualRuleController.getAccrualRule));

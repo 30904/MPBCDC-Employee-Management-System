@@ -3,9 +3,8 @@ const asyncHandler = require('../utils/asyncHandler');
 const authMiddleware = require('../middleware/authMiddleware');
 const tenantResolver = require('../middleware/tenantResolver');
 const authorizeRoles = require('../middleware/authorizeRoles');
-const { validatePaginationMiddleware } = require('../utils/pagination');
 const { ROLES } = require('../utils/roles');
-const leaveBalanceController = require('../controllers/leaveBalanceController');
+const leaveReportController = require('../controllers/leaveReportController');
 
 const router = express.Router();
 
@@ -13,7 +12,8 @@ router.use(authMiddleware);
 router.use(tenantResolver);
 router.use(authorizeRoles(ROLES.CLIENT_ADMIN));
 
-router.get('/', validatePaginationMiddleware, asyncHandler(leaveBalanceController.listLeaveBalances));
-router.post('/year-end-close', asyncHandler(leaveBalanceController.runYearEndClose));
+router.get('/summary.csv', asyncHandler(leaveReportController.downloadLeaveSummaryCsv));
+router.get('/summary', asyncHandler(leaveReportController.getLeaveSummaryReport));
+router.get('/details', asyncHandler(leaveReportController.getLeaveDetailsReport));
 
 module.exports = router;

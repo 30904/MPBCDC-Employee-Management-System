@@ -10,6 +10,7 @@ export default function ApplyLeave() {
   const [leaveTypeId, setLeaveTypeId] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [isHalfDay, setIsHalfDay] = useState(false);
   const [reason, setReason] = useState('');
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -65,7 +66,7 @@ export default function ApplyLeave() {
       setPreviewError('');
 
       try {
-        const result = await previewLeaveDays({ leaveTypeId, fromDate, toDate });
+        const result = await previewLeaveDays({ leaveTypeId, fromDate, toDate, isHalfDay });
         if (!cancelled) {
           setPreview(result);
         }
@@ -85,7 +86,7 @@ export default function ApplyLeave() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [leaveTypeId, fromDate, toDate]);
+  }, [leaveTypeId, fromDate, toDate, isHalfDay]);
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -98,6 +99,7 @@ export default function ApplyLeave() {
         leaveTypeId,
         fromDate,
         toDate,
+        isHalfDay,
         reason: reason.trim(),
       });
       setSubmitSuccess(`Application ${application.applicationNo} submitted successfully.`);
@@ -158,6 +160,14 @@ export default function ApplyLeave() {
                   required
                 />
               </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 24 }}>
+                <input
+                  type="checkbox"
+                  checked={isHalfDay}
+                  onChange={(event) => setIsHalfDay(event.target.checked)}
+                />
+                Half Day
+              </label>
             </div>
 
             <label>
@@ -173,6 +183,12 @@ export default function ApplyLeave() {
 
             {previewLoading && <p className="placeholder-text">Calculating leave days...</p>}
             {previewError && <div className="form-error">{previewError}</div>}
+            {preview && !preview.sufficientBalance && (
+              <div className="form-error">
+                Insufficient balance before submit. Available {preview.balanceBefore}, required{' '}
+                {preview.chargeableDays}.
+              </div>
+            )}
 
             {preview && !previewLoading && (
               <div className="eligibility-preview eligibility-preview--ok">
@@ -182,14 +198,26 @@ export default function ApplyLeave() {
                     <strong>Working days:</strong> {preview.workingDays}
                   </p>
                   <p>
-                    <strong>Sandwich days:</strong> {preview.sandwichDaysApplied}
-                    {preview.applySandwichRule ? ' (rule on)' : ' (rule off)'}
+                    <strong>Holidays sandwiched:</strong> {preview.holidayDays ?? 0}
                   </p>
                   <p>
-                    <strong>Chargeable days:</strong> {preview.chargeableDays}
+                    <strong>Weekend sandwiched:</strong> {preview.weekendDays ?? 0}
+                  </p>
+                  <p>
+                    <strong>Sandwich total:</strong> {preview.sandwichDaysApplied}
+                    {preview.applySandwichRule ? ' (sandwich rule ON)' : ' (sandwich rule OFF)'}
+                  </p>
+                  <p>
+                    <strong>Total deducted:</strong> {preview.chargeableDays}
                   </p>
                   <p>
                     <strong>Calendar days:</strong> {preview.totalCalendarDays}
+                  </p>
+                  <p>
+                    <strong>Balance before:</strong> {preview.balanceBefore}
+                  </p>
+                  <p>
+                    <strong>Balance after:</strong> {preview.balanceAfter}
                   </p>
                 </div>
               </div>
@@ -201,7 +229,7 @@ export default function ApplyLeave() {
             <button
               type="submit"
               className="primary-btn"
-              disabled={!leaveTypeId || !fromDate || !toDate || submitting}
+              disabled={!leaveTypeId || !fromDate || !toDate || submitting || !preview?.sufficientBalance}
             >
               {submitting ? 'Submitting...' : 'Submit Leave Request'}
             </button>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { fetchLeaveBalances } from '../../../api/leaveBalancesApi.js';
+import { fetchLeaveBalances, runLeaveYearEndClose } from '../../../api/leaveBalancesApi.js';
 import EmptyState from '../../../components/EmptyState.jsx';
 import { getApiErrorMessage } from '../../../utils/apiError.js';
 
@@ -32,6 +32,11 @@ function numberValue(value) {
 export default function LeaveBalances() {
   const [balances, setBalances] = useState([]);
   const [period, setPeriod] = useState('');
+  const [yearEndSourceYear, setYearEndSourceYear] = useState('');
+  const [yearEndEncashPercent, setYearEndEncashPercent] = useState('0');
+  const [yearEndRunning, setYearEndRunning] = useState(false);
+  const [yearEndMessage, setYearEndMessage] = useState('');
+  const [yearEndError, setYearEndError] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -57,6 +62,35 @@ export default function LeaveBalances() {
     loadBalances();
   }, [loadBalances]);
 
+  async function handleRunYearEndClose() {
+    const sourceYear = Number(yearEndSourceYear);
+    if (!Number.isInteger(sourceYear) || sourceYear < 2000) {
+      setYearEndError('Enter a valid source year (e.g. 2026).');
+      setYearEndMessage('');
+      return;
+    }
+
+    setYearEndRunning(true);
+    setYearEndError('');
+    setYearEndMessage('');
+
+    try {
+      const result = await runLeaveYearEndClose({
+        sourcePeriodYear: sourceYear,
+        targetPeriodYear: sourceYear + 1,
+        encashableCarryForwardPercent: Number(yearEndEncashPercent || 0),
+      });
+      setYearEndMessage(
+        `Year-end ${result.processKey}: processed ${result.processed}, skipped ${result.skipped}, carried ${result.carriedForwardTotal}, lapsed ${result.lapsedTotal}, encashed ${result.encashedTotal}.`
+      );
+      await loadBalances();
+    } catch (err) {
+      setYearEndError(getApiErrorMessage(err, 'Failed to run year-end close.'));
+    } finally {
+      setYearEndRunning(false);
+    }
+  }
+
   return (
     <div>
       <div className="section-header">
@@ -75,6 +109,49 @@ export default function LeaveBalances() {
             />
           </label>
         </div>
+      </div>
+
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div className="section-header">
+          <div>
+            <h3>Year-End Carry Forward</h3>
+            <p className="placeholder-text">
+              Run year-end close to carry forward, lapse, and optional encash leave balances.
+            </p>
+          </div>
+        </div>
+
+        <div className="form-grid" style={{ marginBottom: 12 }}>
+          <label>
+            Source year
+            <input
+              type="number"
+              min="2000"
+              step="1"
+              placeholder="e.g. 2026"
+              value={yearEndSourceYear}
+              onChange={(event) => setYearEndSourceYear(event.target.value)}
+            />
+          </label>
+          <label>
+            Encash % of carry-forward
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="0"
+              value={yearEndEncashPercent}
+              onChange={(event) => setYearEndEncashPercent(event.target.value)}
+            />
+          </label>
+        </div>
+
+        {yearEndError && <div className="form-error">{yearEndError}</div>}
+        {yearEndMessage && <div className="form-success">{yearEndMessage}</div>}
+
+        <button type="button" className="primary-btn" onClick={handleRunYearEndClose} disabled={yearEndRunning}>
+          {yearEndRunning ? 'Running…' : 'Run Year-End Close'}
+        </button>
       </div>
 
       <div className="card">

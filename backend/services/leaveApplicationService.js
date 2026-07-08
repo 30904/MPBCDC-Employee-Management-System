@@ -3,6 +3,7 @@ require('../models/Employee');
 const LeaveApplication = require('../models/LeaveApplication');
 const LeaveType = require('../models/LeaveType');
 const Holiday = require('../models/Holiday');
+const LeaveBalance = require('../models/LeaveBalance');
 const AppError = require('../utils/AppError');
 const { AUTO_NUMBER_PREFIXES } = require('../utils/autoNumberPrefixes');
 const autoNumberService = require('./autoNumberService');
@@ -15,7 +16,7 @@ function tenantApplications(companyId) {
 }
 
 function validateCreatePayload(body = {}) {
-  const { leaveTypeId, fromDate, toDate, reason } = body;
+  const { leaveTypeId, fromDate, toDate, reason, isHalfDay, attachmentPath } = body;
 
   if (!leaveTypeId || !mongoose.Types.ObjectId.isValid(leaveTypeId)) {
     throw new AppError('leaveTypeId is required', 400, 'VALIDATION_ERROR');
@@ -36,11 +37,18 @@ function validateCreatePayload(body = {}) {
     throw new AppError('fromDate cannot be after toDate', 400, 'VALIDATION_ERROR');
   }
 
+  const halfDay = isHalfDay === true || isHalfDay === 'true';
+  if (halfDay && from.toDateString() !== to.toDateString()) {
+    throw new AppError('Half-day leave must have same fromDate and toDate', 400, 'VALIDATION_ERROR');
+  }
+
   return {
     leaveTypeId,
     fromDate: from,
     toDate: to,
     reason: reason ? String(reason).trim() : '',
+    isHalfDay: halfDay,
+    attachmentPath: attachmentPath ? String(attachmentPath).trim() : '',
   };
 }
 
@@ -57,6 +65,7 @@ async function loadHolidayDates({ companyId, fromDate, toDate }) {
 
 async function previewLeaveDays({ companyId, payload }) {
   const parsed = validateCreatePayload(payload);
+  const employeeId = payload?.employeeId || null;
 
   const leaveType = await LeaveType.forTenant(companyId).findById(parsed.leaveTypeId);
   if (!leaveType || !leaveType.isActive) {
@@ -76,6 +85,32 @@ async function previewLeaveDays({ companyId, payload }) {
     applySandwichRule: Boolean(leaveType.applySandwichRule),
   });
 
+  let chargeableDays = Number(leaveDays.chargeableDays || 0);
+  if (parsed.isHalfDay) {
+    if (chargeableDays < 1) {
+      throw new AppError('Half-day leave cannot be applied on non-working/non-chargeable date', 400, 'VALIDATION_ERROR');
+    }
+    chargeableDays = 0.5;
+  }
+
+  const period = String(parsed.fromDate.getFullYear());
+  let balanceBefore = Number(leaveType.annualEntitlement || 0);
+
+  if (employeeId) {
+    const currentBalance = await LeaveBalance.forTenant(companyId).findOne({
+      employeeId,
+      leaveTypeId: leaveType._id,
+      period,
+    });
+
+    if (currentBalance) {
+      balanceBefore = Number(currentBalance.closingBalance || 0);
+    }
+  }
+
+  const balanceAfter = Number((balanceBefore - chargeableDays).toFixed(2));
+  const sufficientBalance = balanceAfter >= 0;
+
   return {
     leaveTypeId: leaveType._id,
     leaveTypeCode: leaveType.code,
@@ -83,13 +118,27 @@ async function previewLeaveDays({ companyId, payload }) {
     applySandwichRule: Boolean(leaveType.applySandwichRule),
     fromDate: parsed.fromDate,
     toDate: parsed.toDate,
+    isHalfDay: parsed.isHalfDay,
     ...leaveDays,
+    chargeableDays,
+    balanceBefore: Number(balanceBefore.toFixed(2)),
+    balanceAfter,
+    sufficientBalance,
+    period,
   };
 }
 
 async function createAndSubmit({ companyId, employeeId, payload }) {
-  const preview = await previewLeaveDays({ companyId, payload });
+  const preview = await previewLeaveDays({ companyId, payload: { ...payload, employeeId } });
   const parsed = validateCreatePayload(payload);
+
+  if (!preview.sufficientBalance) {
+    throw new AppError(
+      `Insufficient leave balance. Available: ${preview.balanceBefore}, required: ${preview.chargeableDays}`,
+      400,
+      'INSUFFICIENT_LEAVE_BALANCE'
+    );
+  }
 
   const { autoNumber } = await autoNumberService.getNextAutoNumber(
     companyId,
@@ -101,11 +150,15 @@ async function createAndSubmit({ companyId, employeeId, payload }) {
     employeeId,
     leaveTypeId: parsed.leaveTypeId,
     reason: parsed.reason,
+    isHalfDay: parsed.isHalfDay,
+    attachmentPath: parsed.attachmentPath,
     fromDate: parsed.fromDate,
     toDate: parsed.toDate,
     totalDays: preview.totalCalendarDays,
     workingDays: preview.workingDays,
     sandwichDaysApplied: preview.sandwichDaysApplied,
+    balanceBefore: preview.balanceBefore,
+    balanceAfter: preview.balanceAfter,
     status: LEAVE_APPLICATION_STATUS.SUBMITTED,
     submittedAt: new Date(),
   });

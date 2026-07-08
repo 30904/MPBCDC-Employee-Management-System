@@ -17,6 +17,11 @@ const LeaveBalance = createTenantModel({
     closingBalance: { type: Number, default: 0, min: 0 },
     remarks: { type: String, trim: true, maxlength: 500 },
     lastAccruedAt: { type: Date },
+    /** Last accrual run key applied (e.g. 2026-H1) — used for idempotent posting */
+    lastAccrualPeriodKey: { type: String, trim: true, default: null },
+    /** Year-end close key once processed (e.g. 2026->2027) — idempotent carry-forward */
+    yearEndProcessedKey: { type: String, trim: true, default: null },
+    yearEndProcessedAt: { type: Date },
   },
 });
 

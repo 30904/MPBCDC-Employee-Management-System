@@ -28,10 +28,12 @@ async function previewLeave(req, res) {
   const preview = await leaveApplicationService.previewLeaveDays({
     companyId: req.companyId,
     payload: {
+      employeeId,
       leaveTypeId: req.query.leaveTypeId || req.body?.leaveTypeId,
       fromDate: req.query.fromDate || req.body?.fromDate,
       toDate: req.query.toDate || req.body?.toDate,
       reason: req.body?.reason,
+      isHalfDay: req.query.isHalfDay || req.body?.isHalfDay,
     },
   });
 

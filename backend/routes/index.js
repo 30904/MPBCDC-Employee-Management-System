@@ -26,6 +26,7 @@ const holidayRoutes = require('./holidayRoutes');
 const leaveAccrualRuleRoutes = require('./leaveAccrualRuleRoutes');
 const leaveBalanceRoutes = require('./leaveBalanceRoutes');
 const leaveApplicationRoutes = require('./leaveApplicationRoutes');
+const leaveReportRoutes = require('./leaveReportRoutes');
 
 const RESPONSE_CONVENTION = {
   success: { success: true, data: '<payload>' },
@@ -108,9 +109,14 @@ router.get('/', (_req, res) => {
       leaveTypes: `${API_BASE_PATH}/leave-types?page=1&limit=20`,
       holidays: `${API_BASE_PATH}/holidays?year=2026&page=1&limit=20`,
       leaveAccrualRules: `${API_BASE_PATH}/leave-accrual-rules?page=1&limit=20`,
+      leaveAccrualRun: `${API_BASE_PATH}/leave-accrual-rules/run`,
       leaveBalances: `${API_BASE_PATH}/leave-balances?page=1&limit=20`,
+      leaveYearEndClose: `${API_BASE_PATH}/leave-balances/year-end-close`,
       leaveApplications: `${API_BASE_PATH}/leave-applications?page=1&limit=20`,
       leaveApplicationQueue: `${API_BASE_PATH}/leave-applications/queue`,
+      leaveReportsSummary: `${API_BASE_PATH}/leave-reports/summary?year=2026`,
+      leaveReportsSummaryCsv: `${API_BASE_PATH}/leave-reports/summary.csv?year=2026`,
+      leaveReportsDetails: `${API_BASE_PATH}/leave-reports/details?year=2026&page=1&limit=20`,
       approvalMatricesLeaveInit: `${API_BASE_PATH}/approval-matrices/initialize-leave-default`,
     },
   });
@@ -139,6 +145,7 @@ router.use('/holidays', holidayRoutes);
 router.use('/leave-accrual-rules', leaveAccrualRuleRoutes);
 router.use('/leave-balances', leaveBalanceRoutes);
 router.use('/leave-applications', leaveApplicationRoutes);
+router.use('/leave-reports', leaveReportRoutes);
 
 // Tenant-scoped — SUPER_ADMIN may pass x-company-id header via tenantResolver
 router.get(

@@ -6,11 +6,12 @@ export async function fetchLeaveTypeOptions() {
   return unwrapApiData(response);
 }
 
-export async function previewLeaveDays({ leaveTypeId, fromDate, toDate }) {
+export async function previewLeaveDays({ leaveTypeId, fromDate, toDate, isHalfDay = false }) {
   const params = new URLSearchParams({
     leaveTypeId,
     fromDate,
     toDate,
+    isHalfDay: String(Boolean(isHalfDay)),
   });
   const response = await apiClient.get(`/leaves/preview?${params.toString()}`);
   return unwrapApiData(response);

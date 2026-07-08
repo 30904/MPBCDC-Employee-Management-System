@@ -4,6 +4,7 @@ import {
   deleteAccrualRule,
   fetchAccrualRules,
   fetchLeaveTypeOptionsForAccrual,
+  runLeaveAccrual,
   updateAccrualRule,
 } from '../../../api/leaveAccrualRulesApi.js';
 import EmptyState from '../../../components/EmptyState.jsx';
@@ -35,6 +36,12 @@ function monthSummary(rule) {
   return (rule.scheduledMonths || []).join(', ') || '—';
 }
 
+function defaultPeriodKey(date = new Date()) {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  return month <= 6 ? `${year}-H1` : `${year}-H2`;
+}
+
 export default function LeaveAccrualSetup() {
   const [rules, setRules] = useState([]);
   const [leaveTypeOptions, setLeaveTypeOptions] = useState([]);
@@ -43,6 +50,10 @@ export default function LeaveAccrualSetup() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [actionError, setActionError] = useState('');
+  const [runPeriod, setRunPeriod] = useState(defaultPeriodKey());
+  const [running, setRunning] = useState(false);
+  const [runResult, setRunResult] = useState(null);
+  const [runError, setRunError] = useState('');
 
   const loadLeaveTypeOptions = useCallback(async () => {
     try {
@@ -138,6 +149,24 @@ export default function LeaveAccrualSetup() {
     }
   }
 
+  async function handleRunAccrual() {
+    setRunning(true);
+    setRunError('');
+    setRunResult(null);
+
+    try {
+      const result = await runLeaveAccrual({
+        period: runPeriod.trim() || undefined,
+        asOfDate: new Date().toISOString().slice(0, 10),
+      });
+      setRunResult(result);
+    } catch (err) {
+      setRunError(getApiErrorMessage(err, 'Failed to run leave accrual.'));
+    } finally {
+      setRunning(false);
+    }
+  }
+
   return (
     <div>
       <div className="section-header">
@@ -163,6 +192,42 @@ export default function LeaveAccrualSetup() {
           submitLabel={editing ? 'Update Accrual Rule' : 'Create Accrual Rule'}
         />
       )}
+
+      <div className="card" style={{ marginBottom: 16 }}>
+        <div className="section-header">
+          <div>
+            <h3>Run Accrual</h3>
+            <p className="placeholder-text">
+              Post leave credits to employee balance ledger for a period (idempotent — re-run skips already posted rows).
+            </p>
+          </div>
+        </div>
+
+        <div className="form-grid" style={{ marginBottom: 12 }}>
+          <label>
+            Period key
+            <input
+              type="text"
+              value={runPeriod}
+              onChange={(event) => setRunPeriod(event.target.value)}
+              placeholder="e.g. 2026-H1"
+            />
+          </label>
+        </div>
+
+        {runError && <div className="form-error">{runError}</div>}
+        {runResult && (
+          <div className="form-success">
+            Posted period <code>{runResult.period}</code> — employees {runResult.employeesProcessed},
+            updated {runResult.balancesUpdated}, skipped {runResult.balancesSkipped} (rules:{' '}
+            {runResult.ruleCount}).
+          </div>
+        )}
+
+        <button type="button" className="primary-btn" onClick={handleRunAccrual} disabled={running}>
+          {running ? 'Running…' : 'Run Accrual Now'}
+        </button>
+      </div>
 
       <div className="card">
         {actionError && <div className="form-error">{actionError}</div>}
