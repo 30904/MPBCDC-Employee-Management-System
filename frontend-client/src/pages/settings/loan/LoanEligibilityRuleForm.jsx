@@ -169,6 +169,7 @@ export default function LoanEligibilityRuleForm({
             required
           />
         </label>
+        {/*
         <label>
           Min Service (months)
           <input
@@ -190,6 +191,7 @@ export default function LoanEligibilityRuleForm({
             placeholder="e.g. 10"
           />
         </label>
+        */}
         <label>
           Min Loan Amount (% of salary)
           <input
@@ -236,6 +238,7 @@ export default function LoanEligibilityRuleForm({
             placeholder="Uses loan type max if empty"
           />
         </label>
+        {/*
         <label>
           Interest Rate Formula
           <select
@@ -250,6 +253,7 @@ export default function LoanEligibilityRuleForm({
             ))}
           </select>
         </label>
+        */}
         <label>
           Max EMI % of Gross
           <input
@@ -262,6 +266,7 @@ export default function LoanEligibilityRuleForm({
             required
           />
         </label>
+        {/*
         <label>
           Retirement Buffer (months)
           <input
@@ -273,6 +278,7 @@ export default function LoanEligibilityRuleForm({
             required
           />
         </label>
+        */}
         <label>
           Status
           <select value={form.status} onChange={(e) => updateField('status', e.target.value)}>

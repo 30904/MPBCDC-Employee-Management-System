@@ -26,8 +26,6 @@ const EMPTY_FORM = {
   maxTenureMonths: '',
   interestFormula: 'COMPOUND_INTEREST',
   interestRate: '',
-  minServiceYears: '0',
-  salaryMultiplier: '',
   isActive: true,
 };
 
@@ -48,14 +46,6 @@ function toFormValues(initialValues) {
     maxTenureMonths: initialValues.maxTenureMonths ?? '',
     interestFormula: initialValues.interestFormula ?? 'COMPOUND_INTEREST',
     interestRate: initialValues.interestRate ?? '',
-    minServiceYears:
-      initialValues.minServiceYears === undefined || initialValues.minServiceYears === null
-        ? '0'
-        : String(initialValues.minServiceYears),
-    salaryMultiplier:
-      initialValues.salaryMultiplier === null || initialValues.salaryMultiplier === undefined
-        ? ''
-        : String(initialValues.salaryMultiplier),
     isActive: initialValues.isActive !== false,
   };
 }
@@ -73,13 +63,8 @@ function buildPayload(form) {
     maxTenureMonths: Number(form.maxTenureMonths),
     interestFormula: form.interestFormula,
     interestRate: Number(form.interestRate),
-    minServiceYears: Number(form.minServiceYears || 0),
     isActive: form.isActive,
   };
-
-  if (form.salaryMultiplier !== '') {
-    payload.salaryMultiplier = Number(form.salaryMultiplier);
-  }
 
   return payload;
 }
@@ -200,27 +185,6 @@ export default function LoanTypeForm({
             onChange={(e) => updateField('interestRate', e.target.value)}
             required
             placeholder="8"
-          />
-        </label>
-        <label>
-          Min Service (years)
-          <input
-            type="number"
-            min="0"
-            step="1"
-            value={form.minServiceYears}
-            onChange={(e) => updateField('minServiceYears', e.target.value)}
-          />
-        </label>
-        <label>
-          Salary Multiplier (optional)
-          <input
-            type="number"
-            min="0"
-            step="0.1"
-            value={form.salaryMultiplier}
-            onChange={(e) => updateField('salaryMultiplier', e.target.value)}
-            placeholder="e.g. 10"
           />
         </label>
       </div>
