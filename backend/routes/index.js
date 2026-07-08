@@ -6,9 +6,6 @@ const uploadRoutes = require('./uploadRoutes');
 const autoNumberRoutes = require('./autoNumberRoutes');
 const dateRoutes = require('./dateRoutes');
 const leaveRoutes = require('./leaveRoutes');
-const leaveTypeRoutes = require('./leaveTypeRoutes');
-const holidayRoutes = require('./holidayRoutes');
-const leaveAccrualRuleRoutes = require('./leaveAccrualRuleRoutes');
 const loanRoutes = require('./loanRoutes');
 const loanTypeRoutes = require('./loanTypeRoutes');
 const loanEligibilityRuleRoutes = require('./loanEligibilityRuleRoutes');
@@ -91,12 +88,8 @@ router.get('/', (_req, res) => {
         formats: `${API_BASE_PATH}/dates/formats`,
       },
       loanTypes: `${API_BASE_PATH}/loan-types?page=1&limit=20`,
-      leaveTypes: `${API_BASE_PATH}/leave-types?page=1&limit=20`,
-      holidays: `${API_BASE_PATH}/holidays?year=2026&page=1&limit=20`,
-      leaveAccrualRules: `${API_BASE_PATH}/leave-accrual-rules?page=1&limit=20`,
       loanEligibilityRules: `${API_BASE_PATH}/loan-eligibility-rules?page=1&limit=20`,
       approvalMatrices: `${API_BASE_PATH}/approval-matrices?module=LOAN`,
-      approvalMatricesLeaveInit: `${API_BASE_PATH}/approval-matrices/initialize-leave-default`,
       loanApplicationQueue: `${API_BASE_PATH}/loan-applications/queue`,
       loanApplications: `${API_BASE_PATH}/loan-applications?page=1&limit=20`,
       loanApplicationsMine: `${API_BASE_PATH}/loan-applications/mine?page=1&limit=20`,
@@ -122,9 +115,6 @@ router.use('/uploads', uploadRoutes);
 router.use('/auto-numbers', autoNumberRoutes);
 router.use('/dates', dateRoutes);
 router.use('/leaves', leaveRoutes);
-router.use('/leave-types', leaveTypeRoutes);
-router.use('/holidays', holidayRoutes);
-router.use('/leave-accrual-rules', leaveAccrualRuleRoutes);
 router.use('/loans', loanRoutes);
 router.use('/loan-types', loanTypeRoutes);
 router.use('/loan-eligibility-rules', loanEligibilityRuleRoutes);

@@ -1,9 +1,7 @@
 const ApprovalMatrix = require('../models/ApprovalMatrix');
 const AppError = require('../utils/AppError');
 const { LOAN_MODULE } = require('../constants/loanWorkflowStates');
-const { LEAVE_MODULE } = require('../constants/leaveWorkflowStates');
 const { DEFAULT_LOAN_APPROVAL_LEVELS } = require('../services/loanWorkflowService');
-const { DEFAULT_LEAVE_APPROVAL_LEVELS } = require('../services/leaveWorkflowService');
 const { sendSuccess, sendPaginatedSuccess } = require('../utils/apiResponse');
 const { parsePagination, executePaginatedQuery } = require('../utils/pagination');
 
@@ -133,34 +131,6 @@ async function initializeLoanApprovalMatrix(req, res) {
   return sendSuccess(res, { initialized: true, rows }, 201);
 }
 
-async function initializeLeaveApprovalMatrix(req, res) {
-  const existing = await tenantMatrices(req).find({ module: LEAVE_MODULE });
-
-  if (existing.length > 0) {
-    return sendSuccess(res, {
-      initialized: false,
-      rows: existing,
-      message: 'Leave workflow already configured',
-    });
-  }
-
-  const rows = [];
-
-  for (const level of DEFAULT_LEAVE_APPROVAL_LEVELS) {
-    const row = await tenantMatrices(req).create({
-      code: 'LEAVE_DEFAULT',
-      module: LEAVE_MODULE,
-      level: level.level,
-      approverRole: level.approverRole,
-      slaDays: level.slaDays,
-      isActive: true,
-    });
-    rows.push(row);
-  }
-
-  return sendSuccess(res, { initialized: true, rows }, 201);
-}
-
 module.exports = {
   listApprovalMatrices,
   getApprovalMatrix,
@@ -168,5 +138,4 @@ module.exports = {
   updateApprovalMatrix,
   deleteApprovalMatrix,
   initializeLoanApprovalMatrix,
-  initializeLeaveApprovalMatrix,
 };

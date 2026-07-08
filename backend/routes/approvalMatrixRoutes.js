@@ -15,7 +15,6 @@ router.use(authorizeRoles(ROLES.CLIENT_ADMIN));
 
 router.get('/', validatePaginationMiddleware, asyncHandler(approvalMatrixController.listApprovalMatrices));
 router.post('/initialize-loan-default', asyncHandler(approvalMatrixController.initializeLoanApprovalMatrix));
-router.post('/initialize-leave-default', asyncHandler(approvalMatrixController.initializeLeaveApprovalMatrix));
 router.post('/', asyncHandler(approvalMatrixController.createApprovalMatrix));
 router.get('/:id', asyncHandler(approvalMatrixController.getApprovalMatrix));
 router.put('/:id', asyncHandler(approvalMatrixController.updateApprovalMatrix));
