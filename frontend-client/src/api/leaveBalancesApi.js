@@ -1,0 +1,21 @@
+import apiClient from './apiClient.js';
+import { buildPaginationQuery, unwrapPaginatedData } from './response.js';
+
+export async function fetchLeaveBalances({ page = 1, limit = 100, employeeId, leaveTypeId, period } = {}) {
+  const params = new URLSearchParams(buildPaginationQuery({ page, limit }));
+
+  if (employeeId) {
+    params.set('employeeId', employeeId);
+  }
+
+  if (leaveTypeId) {
+    params.set('leaveTypeId', leaveTypeId);
+  }
+
+  if (period) {
+    params.set('period', period);
+  }
+
+  const response = await apiClient.get(`/leave-balances?${params.toString()}`);
+  return unwrapPaginatedData(response);
+}

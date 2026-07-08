@@ -2,34 +2,99 @@ const { sendSuccess, sendPaginatedSuccess } = require('../utils/apiResponse');
 const AppError = require('../utils/AppError');
 const loanApplicationService = require('../services/loanApplicationService');
 const loanDisbursementService = require('../services/loanDisbursementService');
+const leaveApplicationService = require('../services/leaveApplicationService');
+const LeaveBalance = require('../models/LeaveBalance');
+const LeaveType = require('../models/LeaveType');
+const { parsePagination, executePaginatedQuery } = require('../utils/pagination');
+require('../models/Employee');
+require('../models/LeaveType');
 
-function buildResponse(req, moduleName, action, extra = {}) {
-  return {
-    module: moduleName,
-    action,
-    companyId: req.selfScope?.companyId || req.companyId || null,
-    employeeId: req.selfScope?.employeeId || null,
-    userId: req.selfScope?.userId || null,
-    ...extra,
-  };
+async function leaveTypeOptions(req, res) {
+  const options = await LeaveType.forTenant(req.companyId)
+    .find({ isActive: true })
+    .sort({ code: 1 })
+    .select('_id code name applySandwichRule');
+
+  return sendSuccess(res, options);
+}
+
+async function previewLeave(req, res) {
+  const employeeId = req.selfScope?.employeeId;
+
+  if (!employeeId) {
+    throw new AppError('Employee context is required', 403, 'EMPLOYEE_SCOPE_REQUIRED');
+  }
+
+  const preview = await leaveApplicationService.previewLeaveDays({
+    companyId: req.companyId,
+    payload: {
+      leaveTypeId: req.query.leaveTypeId || req.body?.leaveTypeId,
+      fromDate: req.query.fromDate || req.body?.fromDate,
+      toDate: req.query.toDate || req.body?.toDate,
+      reason: req.body?.reason,
+    },
+  });
+
+  return sendSuccess(res, preview);
 }
 
 async function applyLeave(req, res) {
-  return sendSuccess(
-    res,
-    buildResponse(req, 'leave', 'apply', {
-      requestedEmployeeId: req.body?.employeeId || null,
-    }),
-    201
-  );
+  const employeeId = req.selfScope?.employeeId;
+
+  if (!employeeId) {
+    throw new AppError('Employee context is required', 403, 'EMPLOYEE_SCOPE_REQUIRED');
+  }
+
+  const application = await leaveApplicationService.createAndSubmit({
+    companyId: req.companyId,
+    employeeId,
+    payload: req.body,
+  });
+
+  return sendSuccess(res, application, 201);
 }
 
 async function leaveHistory(req, res) {
-  return sendSuccess(res, buildResponse(req, 'leave', 'history'));
+  const employeeId = req.selfScope?.employeeId;
+
+  if (!employeeId) {
+    throw new AppError('Employee context is required', 403, 'EMPLOYEE_SCOPE_REQUIRED');
+  }
+
+  const { items, pagination } = await leaveApplicationService.listApplications({
+    companyId: req.companyId,
+    query: req.query,
+    employeeId,
+  });
+
+  return sendPaginatedSuccess(res, items, pagination);
 }
 
 async function leaveBalance(req, res) {
-  return sendSuccess(res, buildResponse(req, 'leave', 'balance'));
+  const employeeId = req.selfScope?.employeeId;
+
+  if (!employeeId) {
+    throw new AppError('Employee context is required', 403, 'EMPLOYEE_SCOPE_REQUIRED');
+  }
+
+  const pagination = parsePagination(req.query);
+  const filter = { employeeId };
+
+  if (req.query.period) {
+    filter.period = String(req.query.period).trim();
+  }
+
+  if (req.query.leaveTypeId) {
+    filter.leaveTypeId = req.query.leaveTypeId;
+  }
+
+  const query = LeaveBalance.forTenant(req.companyId)
+    .find(filter)
+    .populate('leaveTypeId', 'code name')
+    .sort({ period: -1, updatedAt: -1 });
+
+  const { docs, pagination: meta } = await executePaginatedQuery(query, pagination);
+  return sendPaginatedSuccess(res, docs, meta);
 }
 
 async function applyLoan(req, res) {
@@ -81,6 +146,8 @@ async function repaymentSchedule(req, res) {
 }
 
 module.exports = {
+  leaveTypeOptions,
+  previewLeave,
   applyLeave,
   leaveHistory,
   leaveBalance,

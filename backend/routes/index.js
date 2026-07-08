@@ -1,13 +1,11 @@
 const express = require('express');
 const authRoutes = require('./authRoutes');
 const companyRoutes = require('./companyRoutes');
+const employeeRoutes = require('./employeeRoutes');
 const uploadRoutes = require('./uploadRoutes');
 const autoNumberRoutes = require('./autoNumberRoutes');
 const dateRoutes = require('./dateRoutes');
 const leaveRoutes = require('./leaveRoutes');
-const leaveTypeRoutes = require('./leaveTypeRoutes');
-const holidayRoutes = require('./holidayRoutes');
-const leaveAccrualRuleRoutes = require('./leaveAccrualRuleRoutes');
 const loanRoutes = require('./loanRoutes');
 const loanTypeRoutes = require('./loanTypeRoutes');
 const loanEligibilityRuleRoutes = require('./loanEligibilityRuleRoutes');
@@ -23,6 +21,11 @@ const User = require('../models/User');
 const { sendSuccess } = require('../utils/apiResponse');
 const { ROLES } = require('../utils/roles');
 const { API_BASE_PATH, API_INFO } = require('../config/api');
+const leaveTypeRoutes = require('./leaveTypeRoutes');
+const holidayRoutes = require('./holidayRoutes');
+const leaveAccrualRuleRoutes = require('./leaveAccrualRuleRoutes');
+const leaveBalanceRoutes = require('./leaveBalanceRoutes');
+const leaveApplicationRoutes = require('./leaveApplicationRoutes');
 
 const RESPONSE_CONVENTION = {
   success: { success: true, data: '<payload>' },
@@ -90,9 +93,6 @@ router.get('/', (_req, res) => {
         formats: `${API_BASE_PATH}/dates/formats`,
       },
       loanTypes: `${API_BASE_PATH}/loan-types?page=1&limit=20`,
-      leaveTypes: `${API_BASE_PATH}/leave-types?page=1&limit=20`,
-      holidays: `${API_BASE_PATH}/holidays?year=2026&page=1&limit=20`,
-      leaveAccrualRules: `${API_BASE_PATH}/leave-accrual-rules?page=1&limit=20`,
       loanEligibilityRules: `${API_BASE_PATH}/loan-eligibility-rules?page=1&limit=20`,
       approvalMatrices: `${API_BASE_PATH}/approval-matrices?module=LOAN`,
       loanApplicationQueue: `${API_BASE_PATH}/loan-applications/queue`,
@@ -105,6 +105,13 @@ router.get('/', (_req, res) => {
       loanRecoveriesPending: `${API_BASE_PATH}/loan-recoveries/pending?payrollMonth=YYYY-MM`,
       loanPreviewEligibility: `${API_BASE_PATH}/loans/preview-eligibility?loanTypeId=&requestedAmount=&requestedTenure=`,
       tenantPing: `${API_BASE_PATH}/tenant/ping`,
+      leaveTypes: `${API_BASE_PATH}/leave-types?page=1&limit=20`,
+      holidays: `${API_BASE_PATH}/holidays?year=2026&page=1&limit=20`,
+      leaveAccrualRules: `${API_BASE_PATH}/leave-accrual-rules?page=1&limit=20`,
+      leaveBalances: `${API_BASE_PATH}/leave-balances?page=1&limit=20`,
+      leaveApplications: `${API_BASE_PATH}/leave-applications?page=1&limit=20`,
+      leaveApplicationQueue: `${API_BASE_PATH}/leave-applications/queue`,
+      approvalMatricesLeaveInit: `${API_BASE_PATH}/approval-matrices/initialize-leave-default`,
     },
   });
 });
@@ -115,13 +122,11 @@ router.get('/health', (_req, res) => {
 
 router.use('/auth', authRoutes);
 router.use('/companies', companyRoutes);
+router.use('/employees', employeeRoutes);
 router.use('/uploads', uploadRoutes);
 router.use('/auto-numbers', autoNumberRoutes);
 router.use('/dates', dateRoutes);
 router.use('/leaves', leaveRoutes);
-router.use('/leave-types', leaveTypeRoutes);
-router.use('/holidays', holidayRoutes);
-router.use('/leave-accrual-rules', leaveAccrualRuleRoutes);
 router.use('/loans', loanRoutes);
 router.use('/loan-types', loanTypeRoutes);
 router.use('/loan-eligibility-rules', loanEligibilityRuleRoutes);
@@ -129,6 +134,11 @@ router.use('/approval-matrices', approvalMatrixRoutes);
 router.use('/loan-applications', loanApplicationRoutes);
 router.use('/loan-disbursements', loanDisbursementRoutes);
 router.use('/loan-recoveries', loanRecoveryRoutes);
+router.use('/leave-types', leaveTypeRoutes);
+router.use('/holidays', holidayRoutes);
+router.use('/leave-accrual-rules', leaveAccrualRuleRoutes);
+router.use('/leave-balances', leaveBalanceRoutes);
+router.use('/leave-applications', leaveApplicationRoutes);
 
 // Tenant-scoped — SUPER_ADMIN may pass x-company-id header via tenantResolver
 router.get(
