@@ -29,3 +29,8 @@ export async function initializeLoanApprovalMatrix() {
   const response = await apiClient.post('/approval-matrices/initialize-loan-default');
   return unwrapApiData(response);
 }
+
+export async function initializeLeaveApprovalMatrix() {
+  const response = await apiClient.post('/approval-matrices/initialize-leave-default');
+  return unwrapApiData(response);
+}

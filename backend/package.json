@@ -47,7 +47,12 @@
     "test:loan-recovery-model": "node scripts/loanRecoveryModelTest.js",
     "test:loan-recovery": "node scripts/loanRecoveryTest.js",
     "test:loan-closure-model": "node scripts/loanClosureModelTest.js",
-    "seed:client-admin": "node scripts/resetClientAdminPassword.js"
+    "test:leave-workflow": "node scripts/leaveWorkflowTest.js",
+    "test:leave-approval-model": "node scripts/leaveApprovalModelTest.js",
+    "seed:client-admin": "node scripts/resetClientAdminPassword.js",    
+    "seed:leave-types": "node scripts/seedDefaultLeaveTypes.js",
+    "seed:holidays": "node scripts/seedDefaultHolidays.js",
+    "seed:leave-accrual-rules": "node scripts/seedDefaultLeaveAccrualRules.js"
   },
   "keywords": [],
   "author": "",

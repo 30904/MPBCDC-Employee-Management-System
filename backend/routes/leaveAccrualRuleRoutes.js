@@ -11,7 +11,7 @@ const router = express.Router();
 
 router.use(authMiddleware);
 router.use(tenantResolver);
-router.use(authorizeRoles(ROLES.CLIENT_ADMIN, ROLES.HR_OFFICER));
+router.use(authorizeRoles(ROLES.CLIENT_ADMIN));
 
 router.get('/leave-type-options', asyncHandler(leaveAccrualRuleController.listLeaveTypeOptions));
 router.get('/', validatePaginationMiddleware, asyncHandler(leaveAccrualRuleController.listAccrualRules));

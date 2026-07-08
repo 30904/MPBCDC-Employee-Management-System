@@ -14,9 +14,9 @@ const DEFAULT_ROLES = [
     isGlobal: true,
   },
   {
-    code: 'ADMIN',
+    code: 'CLIENT_ADMIN',
     name: 'Admin',
-    description: 'System admin role',
+    description: 'Company administrator with full access to the client portal',
     status: 'Active',
     companyId: null,
     isGlobal: true,
