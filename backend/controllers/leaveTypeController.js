@@ -15,7 +15,6 @@ const WRITABLE_FIELDS = [
   'allowsCarryForward',
   'maxCarryForwardDays',
   'applySandwichRule',
-  'requiresHrApproval',
   'isActive',
 ];
 const REQUIRED_ON_CREATE = ['code', 'name', 'annualEntitlement'];
@@ -61,7 +60,7 @@ function pickLeaveTypePayload(body, { partial = false } = {}) {
     payload.description = String(payload.description).trim();
   }
 
-  ['allowsHalfDay', 'isEncashable', 'allowsCarryForward', 'applySandwichRule', 'requiresHrApproval', 'isActive'].forEach(
+  ['allowsHalfDay', 'isEncashable', 'allowsCarryForward', 'applySandwichRule', 'isActive'].forEach(
     (field) => {
       if (payload[field] !== undefined) {
         payload[field] = parseBoolean(payload[field], field);

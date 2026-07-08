@@ -31,3 +31,8 @@ export async function deleteAccrualRule(id) {
   const response = await apiClient.delete(`/leave-accrual-rules/${id}`);
   return unwrapApiData(response);
 }
+
+export async function runLeaveAccrual(payload = {}) {
+  const response = await apiClient.post('/leave-accrual-rules/run', payload);
+  return unwrapApiData(response);
+}

@@ -23,7 +23,6 @@ const DEFAULT_LEAVE_TYPES = [
     allowsCarryForward: false,
     maxCarryForwardDays: 0,
     applySandwichRule: false,
-    requiresHrApproval: false,
     isActive: true,
   },
   {
@@ -36,7 +35,6 @@ const DEFAULT_LEAVE_TYPES = [
     allowsCarryForward: false,
     maxCarryForwardDays: 0,
     applySandwichRule: false,
-    requiresHrApproval: false,
     isActive: true,
   },
   {
@@ -49,7 +47,6 @@ const DEFAULT_LEAVE_TYPES = [
     allowsCarryForward: true,
     maxCarryForwardDays: 15,
     applySandwichRule: true,
-    requiresHrApproval: true,
     isActive: true,
   },
   {
@@ -62,7 +59,6 @@ const DEFAULT_LEAVE_TYPES = [
     allowsCarryForward: false,
     maxCarryForwardDays: 0,
     applySandwichRule: false,
-    requiresHrApproval: true,
     isActive: true,
   },
 ];

@@ -1,7 +1,6 @@
 /**
- * Leave application lifecycle (Sheet 04 — Approval Workflow, row 13).
- * Submitted → Manager → HR (optional per leave type) → Approved
- * Rejected is terminal from any approval stage.
+ * Leave application lifecycle (3-role system).
+ * Submitted → Admin approval → Approved
  */
 
 const LEAVE_MODULE = 'LEAVE';
@@ -20,16 +19,20 @@ const LEAVE_APPROVAL_DECISION = Object.freeze({
   REJECTED: 'Rejected',
 });
 
-/** Status reached after each approval level completes successfully. */
+/** Status after the single admin approval step. */
 const STATUS_AFTER_LEVEL_APPROVAL = Object.freeze({
-  1: LEAVE_APPLICATION_STATUS.MANAGER_APPROVED,
-  2: LEAVE_APPLICATION_STATUS.APPROVED,
+  1: LEAVE_APPLICATION_STATUS.APPROVED,
 });
 
-/** Application statuses visible in each approver's queue. */
-const QUEUE_STATUS_BY_APPROVER_ROLE = Object.freeze({
-  REPORTING_MANAGER: [LEAVE_APPLICATION_STATUS.SUBMITTED],
-  HR_OFFICER: [LEAVE_APPLICATION_STATUS.MANAGER_APPROVED],
+/** All statuses waiting for admin review (includes legacy in-flight statuses). */
+const PENDING_APPROVAL_STATUSES = Object.freeze([
+  LEAVE_APPLICATION_STATUS.SUBMITTED,
+  LEAVE_APPLICATION_STATUS.MANAGER_APPROVED,
+  LEAVE_APPLICATION_STATUS.HR_APPROVED,
+]);
+
+const QUEUE_STATUS_BY_LEVEL = Object.freeze({
+  1: [...PENDING_APPROVAL_STATUSES],
 });
 
 const TERMINAL_STATUSES = Object.freeze([
@@ -42,6 +45,7 @@ module.exports = {
   LEAVE_APPLICATION_STATUS,
   LEAVE_APPROVAL_DECISION,
   STATUS_AFTER_LEVEL_APPROVAL,
-  QUEUE_STATUS_BY_APPROVER_ROLE,
+  QUEUE_STATUS_BY_LEVEL,
+  PENDING_APPROVAL_STATUSES,
   TERMINAL_STATUSES,
 };

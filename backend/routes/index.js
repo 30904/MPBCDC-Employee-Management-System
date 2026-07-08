@@ -26,6 +26,12 @@ const User = require('../models/User');
 const { sendSuccess } = require('../utils/apiResponse');
 const { ROLES } = require('../utils/roles');
 const { API_BASE_PATH, API_INFO } = require('../config/api');
+const leaveTypeRoutes = require('./leaveTypeRoutes');
+const holidayRoutes = require('./holidayRoutes');
+const leaveAccrualRuleRoutes = require('./leaveAccrualRuleRoutes');
+const leaveBalanceRoutes = require('./leaveBalanceRoutes');
+const leaveApplicationRoutes = require('./leaveApplicationRoutes');
+const leaveReportRoutes = require('./leaveReportRoutes');
 
 const RESPONSE_CONVENTION = {
   success: { success: true, data: '<payload>' },
@@ -105,6 +111,18 @@ router.get('/', (_req, res) => {
       loanRecoveriesPending: `${API_BASE_PATH}/loan-recoveries/pending?payrollMonth=YYYY-MM`,
       loanPreviewEligibility: `${API_BASE_PATH}/loans/preview-eligibility?loanTypeId=&requestedAmount=&requestedTenure=`,
       tenantPing: `${API_BASE_PATH}/tenant/ping`,
+      leaveTypes: `${API_BASE_PATH}/leave-types?page=1&limit=20`,
+      holidays: `${API_BASE_PATH}/holidays?year=2026&page=1&limit=20`,
+      leaveAccrualRules: `${API_BASE_PATH}/leave-accrual-rules?page=1&limit=20`,
+      leaveAccrualRun: `${API_BASE_PATH}/leave-accrual-rules/run`,
+      leaveBalances: `${API_BASE_PATH}/leave-balances?page=1&limit=20`,
+      leaveYearEndClose: `${API_BASE_PATH}/leave-balances/year-end-close`,
+      leaveApplications: `${API_BASE_PATH}/leave-applications?page=1&limit=20`,
+      leaveApplicationQueue: `${API_BASE_PATH}/leave-applications/queue`,
+      leaveReportsSummary: `${API_BASE_PATH}/leave-reports/summary?year=2026`,
+      leaveReportsSummaryCsv: `${API_BASE_PATH}/leave-reports/summary.csv?year=2026`,
+      leaveReportsDetails: `${API_BASE_PATH}/leave-reports/details?year=2026&page=1&limit=20`,
+      approvalMatricesLeaveInit: `${API_BASE_PATH}/approval-matrices/initialize-leave-default`,
     },
   });
 });
@@ -132,6 +150,12 @@ router.use('/approval-matrices', approvalMatrixRoutes);
 router.use('/loan-applications', loanApplicationRoutes);
 router.use('/loan-disbursements', loanDisbursementRoutes);
 router.use('/loan-recoveries', loanRecoveryRoutes);
+router.use('/leave-types', leaveTypeRoutes);
+router.use('/holidays', holidayRoutes);
+router.use('/leave-accrual-rules', leaveAccrualRuleRoutes);
+router.use('/leave-balances', leaveBalanceRoutes);
+router.use('/leave-applications', leaveApplicationRoutes);
+router.use('/leave-reports', leaveReportRoutes);
 
 // Tenant-scoped — SUPER_ADMIN may pass x-company-id header via tenantResolver
 router.get(

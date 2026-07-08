@@ -5,6 +5,8 @@ const AppError = require('../utils/AppError');
 const { sendSuccess, sendPaginatedSuccess } = require('../utils/apiResponse');
 const { parsePagination, executePaginatedQuery } = require('../utils/pagination');
 const { parseIsoDate, startOfUtcDay, toIsoDateString } = require('../utils/dateUtils');
+const leaveAccrualService = require('../services/leaveAccrualService');
+const { buildAccrualPeriodKey } = leaveAccrualService;
 
 const WRITABLE_FIELDS = [
   'ruleCode',
@@ -280,6 +282,45 @@ async function deleteAccrualRule(req, res) {
   return sendSuccess(res, { id: rule._id, deleted: true });
 }
 
+async function runAccrual(req, res) {
+  const asOfRaw = req.body?.asOfDate || req.query?.asOfDate;
+  const asOfDate = asOfRaw ? new Date(asOfRaw) : new Date();
+
+  if (Number.isNaN(asOfDate.getTime())) {
+    throw new AppError('asOfDate must be a valid ISO date', 400, 'VALIDATION_ERROR');
+  }
+
+  let period = req.body?.period || req.query?.period;
+  if (period) {
+    period = String(period).trim().toUpperCase();
+  } else {
+    period = buildAccrualPeriodKey(asOfDate.getUTCFullYear(), asOfDate.getUTCMonth() + 1);
+  }
+
+  let employeeIds = req.body?.employeeIds;
+  if (employeeIds !== undefined) {
+    if (!Array.isArray(employeeIds)) {
+      throw new AppError('employeeIds must be an array', 400, 'VALIDATION_ERROR');
+    }
+
+    const invalid = employeeIds.filter((id) => !mongoose.Types.ObjectId.isValid(id));
+    if (invalid.length > 0) {
+      throw new AppError('employeeIds contains invalid ObjectId values', 400, 'VALIDATION_ERROR');
+    }
+  } else {
+    employeeIds = [];
+  }
+
+  const result = await leaveAccrualService.accrueForPeriod({
+    companyId: req.companyId,
+    period,
+    employeeIds,
+    asOfDate,
+  });
+
+  return sendSuccess(res, result);
+}
+
 module.exports = {
   listLeaveTypeOptions,
   listAccrualRules,
@@ -287,4 +328,5 @@ module.exports = {
   createAccrualRule,
   updateAccrualRule,
   deleteAccrualRule,
+  runAccrual,
 };

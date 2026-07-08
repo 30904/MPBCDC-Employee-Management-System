@@ -6,7 +6,6 @@ const FLAG_FIELDS = [
   { key: 'isEncashable', label: 'Encashable at year-end' },
   { key: 'allowsCarryForward', label: 'Allow carry-forward' },
   { key: 'applySandwichRule', label: 'Apply sandwich rule' },
-  { key: 'requiresHrApproval', label: 'Requires HR approval' },
 ];
 
 const EMPTY_FORM = {
@@ -19,7 +18,6 @@ const EMPTY_FORM = {
   allowsCarryForward: false,
   maxCarryForwardDays: '0',
   applySandwichRule: false,
-  requiresHrApproval: false,
   isActive: true,
 };
 
@@ -44,7 +42,6 @@ function toFormValues(initialValues) {
         ? '0'
         : String(initialValues.maxCarryForwardDays),
     applySandwichRule: Boolean(initialValues.applySandwichRule),
-    requiresHrApproval: Boolean(initialValues.requiresHrApproval),
     isActive: initialValues.isActive !== false,
   };
 }
@@ -60,7 +57,6 @@ function buildPayload(form) {
     allowsCarryForward: form.allowsCarryForward,
     maxCarryForwardDays: form.allowsCarryForward ? Number(form.maxCarryForwardDays || 0) : 0,
     applySandwichRule: form.applySandwichRule,
-    requiresHrApproval: form.requiresHrApproval,
     isActive: form.isActive,
   };
 
