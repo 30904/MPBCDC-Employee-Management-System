@@ -9,9 +9,9 @@ import EmployeeForm from './pages/settings/employees/EmployeeForm.jsx';
 import EmployeeDetails from './pages/settings/employees/EmployeeDetails.jsx';
 import DepartmentMaster from './pages/settings/organization/DepartmentMaster.jsx';
 import Designations from './pages/settings/organization/Designations.jsx';
-import Districts from './pages/settings/organization/Districts.jsx';
-import Grades from './pages/settings/organization/Grades.jsx';
-import Regions from './pages/settings/organization/Regions.jsx';
+import GradeMaster from './pages/settings/organization/GradeMaster.jsx';
+import RegionMaster from './pages/settings/organization/RegionMaster.jsx';
+import DistrictMaster from './pages/settings/organization/DistrictMaster.jsx';
 import ServiceRecords from './pages/service-records/ServiceRecords.jsx';
 import EmployeeList from './pages/settings/employees/EmployeeList.jsx';
 import LoanTypes from './pages/settings/loan/LoanTypes.jsx';
@@ -76,7 +76,7 @@ export default function App() {
               path="/settings/organization/grades"
               element={
                 <SubModuleGuard roles={['CLIENT_ADMIN']}>
-                  <Grades />
+                  <GradeMaster />
                 </SubModuleGuard>
               }
             />
@@ -84,7 +84,7 @@ export default function App() {
               path="/settings/organization/regions"
               element={
                 <SubModuleGuard roles={['CLIENT_ADMIN']}>
-                  <Regions />
+                  <RegionMaster />
                 </SubModuleGuard>
               }
             />
@@ -92,7 +92,7 @@ export default function App() {
               path="/settings/organization/districts"
               element={
                 <SubModuleGuard roles={['CLIENT_ADMIN']}>
-                  <Districts />
+                  <DistrictMaster />
                 </SubModuleGuard>
               }
             />
