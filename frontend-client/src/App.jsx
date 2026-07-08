@@ -1,10 +1,15 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import GuardedLayout from './routes/GuardedLayout.jsx';
 import PrivateRoutes from './routes/PrivateRoutes.jsx';
+import SubModuleGuard from './routes/SubModuleGuard.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Login from './pages/Login.jsx';
 import Reports from './pages/reports/Reports.jsx';
-import SubModuleGuard from './routes/SubModuleGuard.jsx';
+import DepartmentMaster from './pages/settings/organization/DepartmentMaster.jsx';
+import Designations from './pages/settings/organization/Designations.jsx';
+import GradeMaster from './pages/settings/organization/GradeMaster.jsx';
+import RegionMaster from './pages/settings/organization/RegionMaster.jsx';
+import DistrictMaster from './pages/settings/organization/DistrictMaster.jsx';
 import ServiceRecords from './pages/service-records/ServiceRecords.jsx';
 import ServiceBook from './pages/service-records/ServiceBook.jsx';
 import SettingsHub from './pages/settings/SettingsHub.jsx';
@@ -36,9 +41,49 @@ export default function App() {
               }
             />
             <Route
-              path="/settings/employees/*"
+              path="/settings/organization/departments"
               element={
                 <SubModuleGuard roles={[ADMIN]}>
+                  <DepartmentMaster />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/organization/designations"
+              element={
+                <SubModuleGuard roles={[ADMIN]}>
+                  <Designations />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/organization/grades"
+              element={
+                <SubModuleGuard roles={[ADMIN]}>
+                  <GradeMaster />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/organization/regions"
+              element={
+                <SubModuleGuard roles={[ADMIN]}>
+                  <RegionMaster />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/organization/districts"
+              element={
+                <SubModuleGuard roles={[ADMIN]}>
+                  <DistrictMaster />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/employees/*"
+              element={
+                <SubModuleGuard roles={[ADMIN, 'HR_OFFICER']}>
                   <EmployeeList />
                 </SubModuleGuard>
               }
