@@ -42,8 +42,8 @@ async function listDesignations(req, res) {
 async function createDesignation(req, res) {
   const payload = normalizeDesignationBody(req.body);
 
-  if (!payload.code || !payload.name || !payload.gradeId || !payload.payScale) {
-    return sendError(res, 'Designation code, name, grade, and pay scale are required', 400);
+  if (!payload.code || !payload.name) {
+    return sendError(res, 'Designation code and name are required', 400);
   }
 
   const designation = await Designation.create({
@@ -71,7 +71,7 @@ async function updateDesignation(req, res) {
     designation.name = payload.name;
   }
 
-  if (payload.gradeId) {
+  if (payload.gradeId !== undefined) {
     designation.gradeId = payload.gradeId;
   }
 

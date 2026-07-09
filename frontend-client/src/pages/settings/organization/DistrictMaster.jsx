@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import apiClient from '../../../api/apiClient.js';
+import { fetchRegions } from '../../../api/organizationMastersApi.js';
 import PageHeader from '../../../components/PageHeader.jsx';
 
 const initialFormState = {
@@ -39,12 +40,12 @@ export default function DistrictMaster() {
       try {
         const [districtResponse, regionResponse] = await Promise.all([
           apiClient.get('/districts'),
-          apiClient.get('/regions'),
+          fetchRegions(),
         ]);
 
         if (isMounted) {
           setDistricts(districtResponse.data.data ?? []);
-          setRegions(regionResponse.data.data ?? []);
+          setRegions(regionResponse ?? []);
         }
       } catch (err) {
         if (isMounted) {

@@ -21,7 +21,7 @@ const Region = createTenantModel({
     managerEmployeeId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Employee',
-      required: [true, 'managerEmployeeId is required'],
+      default: null,
       index: true,
     },
     companyId: {

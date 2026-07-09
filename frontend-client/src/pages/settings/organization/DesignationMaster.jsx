@@ -2,19 +2,14 @@ import { useEffect, useState } from 'react';
 import apiClient from '../../../api/apiClient.js';
 import PageHeader from '../../../components/PageHeader.jsx';
 
-const GRADE_OPTIONS = ['A', 'B', 'C', 'D'];
-
 const initialFormState = {
   code: '',
   name: '',
-  gradeId: '',
-  payScale: '',
   status: 'Active',
 };
 
 export default function DesignationMaster() {
   const [designations, setDesignations] = useState([]);
-  const [gradeOptions, setGradeOptions] = useState(GRADE_OPTIONS);
   const [formData, setFormData] = useState(initialFormState);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -28,37 +23,13 @@ export default function DesignationMaster() {
 
     async function loadDesignations() {
       try {
-        const [designationResult, gradeResult] = await Promise.allSettled([
-          apiClient.get('/designations'),
-          apiClient.get('/grades'),
-        ]);
-
+        const response = await apiClient.get('/designations');
         if (isMounted) {
-          if (designationResult.status === 'fulfilled') {
-            setDesignations(designationResult.value.data.data ?? []);
-          } else {
-            setError(
-              designationResult.reason?.response?.data?.error ||
-                'Unable to load designation master data.'
-            );
-          }
+          setDesignations(response.data.data ?? []);
         }
-
-        if (isMounted && gradeResult.status === 'fulfilled') {
-          const lookupGrades = gradeResult.value.data.data ?? [];
-          const normalizedGrades = lookupGrades
-            .map((grade) => {
-              if (typeof grade === 'string') {
-                return grade;
-              }
-
-              return grade.name || grade.code || grade.gradeId || grade.id;
-            })
-            .filter(Boolean);
-
-          if (normalizedGrades.length > 0) {
-            setGradeOptions(normalizedGrades);
-          }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.response?.data?.error || 'Unable to load designation master data.');
         }
       } finally {
         if (isMounted) {
@@ -93,8 +64,6 @@ export default function DesignationMaster() {
     setFormData({
       code: designation.code || '',
       name: designation.name || '',
-      gradeId: designation.gradeId || '',
-      payScale: designation.payScale || '',
       status: designation.status || 'Active',
     });
     setError('');
@@ -138,9 +107,7 @@ export default function DesignationMaster() {
       />
 
       <div className="card" style={{ marginBottom: '1rem' }}>
-        <p className="placeholder-text">
-          Maintain designation code, name, grade, pay scale, and status for the current company.
-        </p>
+        <p className="placeholder-text">Maintain designation code, name, and status for the current company.</p>
 
         {error && <div className="alert alert-warning">{error}</div>}
 
@@ -153,23 +120,6 @@ export default function DesignationMaster() {
           <label className="form-field">
             <span>Designation Name</span>
             <input name="name" value={formData.name} onChange={handleChange} required />
-          </label>
-
-          <label className="form-field">
-            <span>Grade</span>
-            <select name="gradeId" value={formData.gradeId} onChange={handleChange} required>
-              <option value="">Select grade</option>
-              {gradeOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="form-field">
-            <span>Pay Scale</span>
-            <input name="payScale" value={formData.payScale} onChange={handleChange} required />
           </label>
 
           <label className="form-field">
@@ -208,8 +158,6 @@ export default function DesignationMaster() {
                 <tr>
                   <th>Code</th>
                   <th>Name</th>
-                  <th>Grade</th>
-                  <th>Pay Scale</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -217,7 +165,7 @@ export default function DesignationMaster() {
               <tbody>
                 {designations.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="empty-state">
+                    <td colSpan="4" className="empty-state">
                       No designations found.
                     </td>
                   </tr>
@@ -226,19 +174,13 @@ export default function DesignationMaster() {
                     <tr key={designation.id}>
                       <td>{designation.code}</td>
                       <td>{designation.name}</td>
-                      <td>{designation.gradeId}</td>
-                      <td>{designation.payScale}</td>
                       <td>
                         <span className={`status-pill status-${designation.status?.toLowerCase()}`}>
                           {designation.status}
                         </span>
                       </td>
                       <td className="row-actions">
-                        <button
-                          type="button"
-                          className="text-action"
-                          onClick={() => handleEditDesignation(designation)}
-                        >
+                        <button type="button" className="text-action" onClick={() => handleEditDesignation(designation)}>
                           Edit
                         </button>
                       </td>

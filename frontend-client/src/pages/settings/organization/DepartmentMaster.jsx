@@ -1,25 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import apiClient from '../../../api/apiClient.js';
 import PageHeader from '../../../components/PageHeader.jsx';
 
 const initialFormState = {
   name: '',
-  headEmployeeId: '',
-  effectiveDate: '',
   status: 'Active',
 };
 
-function formatDate(value) {
-  if (!value) {
-    return '-';
-  }
-
-  return String(value).slice(0, 10);
-}
-
 export default function DepartmentMaster() {
   const [departments, setDepartments] = useState([]);
-  const [employees, setEmployees] = useState([]);
   const [formData, setFormData] = useState(initialFormState);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,21 +16,15 @@ export default function DepartmentMaster() {
   const [error, setError] = useState('');
 
   const isEditing = Boolean(editingId);
-  const employeeOptions = useMemo(() => employees, [employees]);
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadData() {
       try {
-        const [departmentResponse, employeeResponse] = await Promise.all([
-          apiClient.get('/departments'),
-          apiClient.get('/employees'),
-        ]);
-
+        const response = await apiClient.get('/departments');
         if (isMounted) {
-          setDepartments(departmentResponse.data.data ?? []);
-          setEmployees(employeeResponse.data.data ?? []);
+          setDepartments(response.data.data ?? []);
         }
       } catch (err) {
         if (isMounted) {
@@ -79,8 +62,6 @@ export default function DepartmentMaster() {
     setEditingId(department.id);
     setFormData({
       name: department.name || '',
-      headEmployeeId: department.headEmployeeId?.id || department.headEmployeeId || '',
-      effectiveDate: formatDate(department.effectiveDate),
       status: department.status || 'Active',
     });
     setError('');
@@ -97,14 +78,9 @@ export default function DepartmentMaster() {
     setError('');
 
     try {
-      const payload = {
-        ...formData,
-        headEmployeeId: formData.headEmployeeId || null,
-      };
-
       const request = isEditing
-        ? apiClient.put(`/departments/${editingId}`, payload)
-        : apiClient.post('/departments', payload);
+        ? apiClient.put(`/departments/${editingId}`, formData)
+        : apiClient.post('/departments', formData);
 
       await request;
       await refreshDepartments();
@@ -121,17 +97,15 @@ export default function DepartmentMaster() {
       <PageHeader
         title="Department Master"
         subtitle="Manage company department records"
-        action={
+        action={(
           <button type="button" className="primary-btn" onClick={resetForm}>
             + New Department
           </button>
-        }
+        )}
       />
 
       <div className="card" style={{ marginBottom: '1rem' }}>
-        <p className="placeholder-text">
-          Maintain department name, head employee, effective date, and status for the current company.
-        </p>
+        <p className="placeholder-text">Maintain department name and status for the current company.</p>
 
         {error && <div className="alert alert-warning">{error}</div>}
 
@@ -139,23 +113,6 @@ export default function DepartmentMaster() {
           <label className="form-field">
             <span>Department Name</span>
             <input name="name" value={formData.name} onChange={handleChange} required />
-          </label>
-
-          <label className="form-field">
-            <span>Head Employee</span>
-            <select name="headEmployeeId" value={formData.headEmployeeId} onChange={handleChange}>
-              <option value="">Select employee</option>
-              {employeeOptions.map((employee) => (
-                <option key={employee.id} value={employee.id}>
-                  {employee.employeeCode} - {employee.employeeName}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="form-field">
-            <span>Effective Date</span>
-            <input type="date" name="effectiveDate" value={formData.effectiveDate} onChange={handleChange} required />
           </label>
 
           <label className="form-field">
@@ -168,7 +125,7 @@ export default function DepartmentMaster() {
 
           <div className="form-actions">
             <button type="submit" className="primary-btn" disabled={saving}>
-              {saving ? 'Saving…' : isEditing ? 'Update Department' : 'Create Department'}
+              {saving ? 'Saving...' : isEditing ? 'Update Department' : 'Create Department'}
             </button>
             {isEditing && (
               <button type="button" className="primary-btn" onClick={resetForm}>
@@ -186,15 +143,13 @@ export default function DepartmentMaster() {
         </div>
 
         {loading ? (
-          <p className="placeholder-text">Loading departments…</p>
+          <p className="placeholder-text">Loading departments...</p>
         ) : (
           <div className="table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>Head Employee</th>
-                  <th>Effective Date</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -202,7 +157,7 @@ export default function DepartmentMaster() {
               <tbody>
                 {departments.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="empty-state">
+                    <td colSpan="3" className="empty-state">
                       No departments found.
                     </td>
                   </tr>
@@ -210,12 +165,6 @@ export default function DepartmentMaster() {
                   departments.map((department) => (
                     <tr key={department.id}>
                       <td>{department.name}</td>
-                      <td>
-                        {department.headEmployeeId?.employeeName
-                          ? `${department.headEmployeeId.employeeName}${department.headEmployeeId.employeeCode ? ` (${department.headEmployeeId.employeeCode})` : ''}`
-                          : department.headEmployeeId?.employeeCode || '-'}
-                      </td>
-                      <td>{formatDate(department.effectiveDate)}</td>
                       <td>
                         <span className={`status-pill status-${department.status?.toLowerCase()}`}>
                           {department.status}

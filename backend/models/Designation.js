@@ -21,15 +21,15 @@ const Designation = createTenantModel({
     },
     gradeId: {
       type: String,
-      required: true,
       trim: true,
       maxlength: 50,
+      default: '',
     },
     payScale: {
       type: String,
-      required: true,
       trim: true,
       maxlength: 100,
+      default: '',
     },
     status: {
       type: String,

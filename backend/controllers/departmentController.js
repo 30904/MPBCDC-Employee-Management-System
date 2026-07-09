@@ -69,8 +69,8 @@ async function listDepartments(req, res) {
 async function createDepartment(req, res) {
   const payload = normalizeDepartmentBody(req.body);
 
-  if (!payload.name || !payload.effectiveDate) {
-    return sendError(res, 'Department name and effective date are required', 400);
+  if (!payload.name) {
+    return sendError(res, 'Department name is required', 400);
   }
 
   const headCheck = await ensureHeadEmployee(req.companyId, payload.headEmployeeId);

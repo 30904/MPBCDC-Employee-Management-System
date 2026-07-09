@@ -5,13 +5,8 @@ import PageHeader from '../../../components/PageHeader.jsx';
 const initialFormState = {
   code: '',
   name: '',
-  approvalMatrixApplicable: 'false',
   status: 'Active',
 };
-
-function formatBoolean(value) {
-  return value ? 'Yes' : 'No';
-}
 
 export default function GradeMaster() {
   const [grades, setGrades] = useState([]);
@@ -70,7 +65,6 @@ export default function GradeMaster() {
     setFormData({
       code: grade.code || '',
       name: grade.name || '',
-      approvalMatrixApplicable: grade.approvalMatrixApplicable ? 'true' : 'false',
       status: grade.status || 'Active',
     });
     setError('');
@@ -87,14 +81,9 @@ export default function GradeMaster() {
     setError('');
 
     try {
-      const payload = {
-        ...formData,
-        approvalMatrixApplicable: formData.approvalMatrixApplicable === 'true',
-      };
-
       const request = isEditing
-        ? apiClient.put(`/grades/${editingId}`, payload)
-        : apiClient.post('/grades', payload);
+        ? apiClient.put(`/grades/${editingId}`, formData)
+        : apiClient.post('/grades', formData);
 
       await request;
       await refreshGrades();
@@ -119,9 +108,7 @@ export default function GradeMaster() {
       />
 
       <div className="card" style={{ marginBottom: '1rem' }}>
-        <p className="placeholder-text">
-          Maintain grade code, name, approval matrix applicability, and status for the current company.
-        </p>
+        <p className="placeholder-text">Maintain grade code, name, and status for the current company.</p>
 
         {error && <div className="alert alert-warning">{error}</div>}
 
@@ -134,19 +121,6 @@ export default function GradeMaster() {
           <label className="form-field">
             <span>Grade Name</span>
             <input name="name" value={formData.name} onChange={handleChange} required />
-          </label>
-
-          <label className="form-field">
-            <span>Approval Matrix Applicable</span>
-            <select
-              name="approvalMatrixApplicable"
-              value={formData.approvalMatrixApplicable}
-              onChange={handleChange}
-              required
-            >
-              <option value="true">Yes</option>
-              <option value="false">No</option>
-            </select>
           </label>
 
           <label className="form-field">
@@ -185,7 +159,6 @@ export default function GradeMaster() {
                 <tr>
                   <th>Code</th>
                   <th>Name</th>
-                  <th>Approval Matrix</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
@@ -193,7 +166,7 @@ export default function GradeMaster() {
               <tbody>
                 {grades.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="empty-state">
+                    <td colSpan="4" className="empty-state">
                       No grades found.
                     </td>
                   </tr>
@@ -202,7 +175,6 @@ export default function GradeMaster() {
                     <tr key={grade.id}>
                       <td>{grade.code}</td>
                       <td>{grade.name}</td>
-                      <td>{formatBoolean(grade.approvalMatrixApplicable)}</td>
                       <td>
                         <span className={`status-pill status-${grade.status?.toLowerCase()}`}>
                           {grade.status}

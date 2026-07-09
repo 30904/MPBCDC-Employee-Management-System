@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import apiClient from '../../../api/apiClient.js';
+import {
+  fetchDepartments,
+  fetchDesignations,
+  fetchDistricts,
+  fetchGrades,
+  fetchRegions,
+} from '../../../api/organizationMastersApi.js';
 import PageHeader from '../../../components/PageHeader.jsx';
 
 const LOOKUP_OPTIONS = {
   gender: ['Male', 'Female', 'Other'],
   status: ['Active', 'Inactive'],
   employmentType: ['Permanent', 'Contract', 'Temporary', 'Probation', 'Consultant'],
-  department: ['Administration', 'Finance', 'Human Resources', 'Operations', 'IT'],
-  designation: ['Manager', 'Officer', 'Executive', 'Associate', 'Assistant'],
-  grade: ['A', 'B', 'C', 'D'],
-  region: ['North', 'South', 'East', 'West'],
-  district: ['District 1', 'District 2', 'District 3', 'District 4'],
 };
 
 const initialFormState = {
@@ -38,12 +40,44 @@ const initialFormState = {
   confirmPassword: '',
 };
 
+function toSelectOptions(items, valueSelector, labelSelector) {
+  return items
+    .map((item) => ({
+      value: valueSelector(item),
+      label: labelSelector(item),
+    }))
+    .filter((item) => item.value);
+}
+
+function withCurrentValue(options, currentValue) {
+  if (!currentValue) {
+    return options;
+  }
+
+  if (options.some((option) => option.value === currentValue)) {
+    return options;
+  }
+
+  return [
+    {
+      value: currentValue,
+      label: `Current: ${currentValue}`,
+    },
+    ...options,
+  ];
+}
+
 export default function EmployeeForm({ mode = 'create' }) {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = mode === 'edit';
   const [formData, setFormData] = useState(initialFormState);
   const [employees, setEmployees] = useState([]);
+  const [departmentOptions, setDepartmentOptions] = useState([]);
+  const [designationOptions, setDesignationOptions] = useState([]);
+  const [gradeOptions, setGradeOptions] = useState([]);
+  const [regionOptions, setRegionOptions] = useState([]);
+  const [districtOptions, setDistrictOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -56,30 +90,106 @@ export default function EmployeeForm({ mode = 'create' }) {
   useEffect(() => {
     let isMounted = true;
 
-    async function loadEmployees() {
-      try {
-        const { data } = await apiClient.get('/employees');
-        if (isMounted) {
-          setEmployees(data.data ?? []);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err.response?.data?.error || 'Unable to load reporting manager options.');
-        }
-      }
-    }
+    async function loadData() {
+      const requests = [
+        apiClient.get('/employees'),
+        fetchDepartments(),
+        fetchDesignations(),
+        fetchGrades(),
+        fetchRegions(),
+        fetchDistricts(),
+      ];
 
-    async function loadEmployee() {
-      if (!isEditMode) {
-        setLoading(false);
+      if (isEditMode) {
+        requests.push(apiClient.get(`/employees/${id}`));
+      }
+
+      const results = await Promise.allSettled(requests);
+      const [
+        employeesResult,
+        departmentsResult,
+        designationsResult,
+        gradesResult,
+        regionsResult,
+        districtsResult,
+        employeeResult,
+      ] = results;
+
+      if (!isMounted) {
         return;
       }
 
-      try {
-        const { data } = await apiClient.get(`/employees/${id}`);
-        const employee = data.data;
+      const errors = [];
 
-        if (isMounted) {
+      if (employeesResult.status === 'fulfilled') {
+        setEmployees(employeesResult.value.data.data ?? []);
+      } else {
+        errors.push(employeesResult.reason?.response?.data?.error || 'Unable to load reporting manager options.');
+      }
+
+      if (departmentsResult.status === 'fulfilled') {
+        setDepartmentOptions(
+          toSelectOptions(
+            departmentsResult.value,
+            (item) => item.name,
+            (item) => item.name
+          )
+        );
+      } else {
+        errors.push(departmentsResult.reason?.response?.data?.error || 'Unable to load departments.');
+      }
+
+      if (designationsResult.status === 'fulfilled') {
+        setDesignationOptions(
+          toSelectOptions(
+            designationsResult.value,
+            (item) => item.name,
+            (item) => `${item.code ? `${item.code} - ` : ''}${item.name}`
+          )
+        );
+      } else {
+        errors.push(designationsResult.reason?.response?.data?.error || 'Unable to load designations.');
+      }
+
+      if (gradesResult.status === 'fulfilled') {
+        setGradeOptions(
+          toSelectOptions(
+            gradesResult.value,
+            (item) => item.code,
+            (item) => `${item.code ? `${item.code} - ` : ''}${item.name}`
+          )
+        );
+      } else {
+        errors.push(gradesResult.reason?.response?.data?.error || 'Unable to load grades.');
+      }
+
+      if (regionsResult.status === 'fulfilled') {
+        setRegionOptions(
+          toSelectOptions(
+            regionsResult.value,
+            (item) => item.name,
+            (item) => `${item.code ? `${item.code} - ` : ''}${item.name}`
+          )
+        );
+      } else {
+        errors.push(regionsResult.reason?.response?.data?.error || 'Unable to load regions.');
+      }
+
+      if (districtsResult.status === 'fulfilled') {
+        setDistrictOptions(
+          toSelectOptions(
+            districtsResult.value,
+            (item) => item.name,
+            (item) => `${item.code ? `${item.code} - ` : ''}${item.name}`
+          )
+        );
+      } else {
+        errors.push(districtsResult.reason?.response?.data?.error || 'Unable to load districts.');
+      }
+
+      if (isEditMode) {
+        if (employeeResult.status === 'fulfilled') {
+          const employee = employeeResult.value.data.data;
           setFormData({
             employeeCode: employee.employeeCode || '',
             employeeName: employee.employeeName || '',
@@ -101,20 +211,19 @@ export default function EmployeeForm({ mode = 'create' }) {
             status: employee.status || 'Active',
             grossSalary: employee.grossSalary ?? '',
           });
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err.response?.data?.error || 'Unable to load employee record.');
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
+        } else {
+          errors.push(employeeResult.reason?.response?.data?.error || 'Unable to load employee record.');
         }
       }
+
+      if (errors.length > 0) {
+        setError(errors[0]);
+      }
+
+      setLoading(false);
     }
 
-    loadEmployees();
-    loadEmployee();
+    loadData();
 
     return () => {
       isMounted = false;
@@ -175,6 +284,14 @@ export default function EmployeeForm({ mode = 'create' }) {
     }
   }
 
+  function renderOptions(options, currentValue) {
+    return withCurrentValue(options, currentValue).map((option) => (
+      <option key={option.value} value={option.value}>
+        {option.label}
+      </option>
+    ));
+  }
+
   if (loading) {
     return (
       <div>
@@ -182,7 +299,7 @@ export default function EmployeeForm({ mode = 'create' }) {
           title={isEditMode ? 'Edit Employee' : 'Create Employee'}
           subtitle={isEditMode ? `Update employee master record ${id}` : 'Create a new master employee record'}
         />
-        <div className="card">Loading employee form…</div>
+        <div className="card">Loading employee form...</div>
       </div>
     );
   }
@@ -222,7 +339,9 @@ export default function EmployeeForm({ mode = 'create' }) {
             <select name="gender" value={formData.gender} onChange={handleChange} required>
               <option value="">Select</option>
               {LOOKUP_OPTIONS.gender.map((option) => (
-                <option key={option} value={option}>{option}</option>
+                <option key={option} value={option}>
+                  {option}
+                </option>
               ))}
             </select>
           </label>
@@ -244,7 +363,14 @@ export default function EmployeeForm({ mode = 'create' }) {
 
           <label className="form-field">
             <span>Mobile Number</span>
-            <input name="mobileNumber" inputMode="numeric" maxLength="15" value={formData.mobileNumber} onChange={handleChange} required />
+            <input
+              name="mobileNumber"
+              inputMode="numeric"
+              maxLength="15"
+              value={formData.mobileNumber}
+              onChange={handleChange}
+              required
+            />
           </label>
 
           <label className="form-field">
@@ -274,9 +400,7 @@ export default function EmployeeForm({ mode = 'create' }) {
             <span>Department</span>
             <select name="department" value={formData.department} onChange={handleChange} required>
               <option value="">Select</option>
-              {LOOKUP_OPTIONS.department.map((option) => (
-                <option key={option} value={option}>{option}</option>
-              ))}
+              {renderOptions(departmentOptions, formData.department)}
             </select>
           </label>
 
@@ -284,9 +408,7 @@ export default function EmployeeForm({ mode = 'create' }) {
             <span>Designation</span>
             <select name="designation" value={formData.designation} onChange={handleChange} required>
               <option value="">Select</option>
-              {LOOKUP_OPTIONS.designation.map((option) => (
-                <option key={option} value={option}>{option}</option>
-              ))}
+              {renderOptions(designationOptions, formData.designation)}
             </select>
           </label>
 
@@ -294,9 +416,7 @@ export default function EmployeeForm({ mode = 'create' }) {
             <span>Grade</span>
             <select name="grade" value={formData.grade} onChange={handleChange} required>
               <option value="">Select</option>
-              {LOOKUP_OPTIONS.grade.map((option) => (
-                <option key={option} value={option}>{option}</option>
-              ))}
+              {renderOptions(gradeOptions, formData.grade)}
             </select>
           </label>
 
@@ -304,9 +424,7 @@ export default function EmployeeForm({ mode = 'create' }) {
             <span>Region</span>
             <select name="region" value={formData.region} onChange={handleChange} required>
               <option value="">Select</option>
-              {LOOKUP_OPTIONS.region.map((option) => (
-                <option key={option} value={option}>{option}</option>
-              ))}
+              {renderOptions(regionOptions, formData.region)}
             </select>
           </label>
 
@@ -314,9 +432,7 @@ export default function EmployeeForm({ mode = 'create' }) {
             <span>District</span>
             <select name="district" value={formData.district} onChange={handleChange} required>
               <option value="">Select</option>
-              {LOOKUP_OPTIONS.district.map((option) => (
-                <option key={option} value={option}>{option}</option>
-              ))}
+              {renderOptions(districtOptions, formData.district)}
             </select>
           </label>
 
@@ -344,7 +460,9 @@ export default function EmployeeForm({ mode = 'create' }) {
             <select name="employmentType" value={formData.employmentType} onChange={handleChange} required>
               <option value="">Select</option>
               {LOOKUP_OPTIONS.employmentType.map((option) => (
-                <option key={option} value={option}>{option}</option>
+                <option key={option} value={option}>
+                  {option}
+                </option>
               ))}
             </select>
           </label>
@@ -353,14 +471,23 @@ export default function EmployeeForm({ mode = 'create' }) {
             <span>Status</span>
             <select name="status" value={formData.status} onChange={handleChange} required>
               {LOOKUP_OPTIONS.status.map((option) => (
-                <option key={option} value={option}>{option}</option>
+                <option key={option} value={option}>
+                  {option}
+                </option>
               ))}
             </select>
           </label>
 
           <label className="form-field">
             <span>Gross Salary</span>
-            <input type="number" min="0" name="grossSalary" value={formData.grossSalary} onChange={handleChange} required />
+            <input
+              type="number"
+              min="0"
+              name="grossSalary"
+              value={formData.grossSalary}
+              onChange={handleChange}
+              required
+            />
           </label>
 
           {!isEditMode && (
@@ -393,7 +520,7 @@ export default function EmployeeForm({ mode = 'create' }) {
 
           <div className="form-actions">
             <button type="submit" className="primary-btn" disabled={saving}>
-              {saving ? 'Saving…' : isEditMode ? 'Update Employee' : 'Create Employee'}
+              {saving ? 'Saving...' : isEditMode ? 'Update Employee' : 'Create Employee'}
             </button>
             {isEditMode ? (
               <Link to={`/settings/employees/${id}`}>Cancel</Link>

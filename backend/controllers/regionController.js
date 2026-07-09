@@ -63,13 +63,15 @@ async function listRegions(req, res) {
 async function createRegion(req, res) {
   const payload = normalizeRegionBody(req.body);
 
-  if (!payload.code || !payload.name || !payload.managerEmployeeId) {
-    return sendError(res, 'Region code, name, and regional manager are required', 400);
+  if (!payload.code || !payload.name) {
+    return sendError(res, 'Region code and name are required', 400);
   }
 
-  const managerCheck = await ensureManagerEmployee(req.companyId, payload.managerEmployeeId);
-  if (managerCheck.error) {
-    return sendError(res, managerCheck.error, 400);
+  if (payload.managerEmployeeId) {
+    const managerCheck = await ensureManagerEmployee(req.companyId, payload.managerEmployeeId);
+    if (managerCheck.error) {
+      return sendError(res, managerCheck.error, 400);
+    }
   }
 
   const region = await Region.create({
@@ -103,12 +105,16 @@ async function updateRegion(req, res) {
   }
 
   if (payload.managerEmployeeId !== undefined) {
-    const managerCheck = await ensureManagerEmployee(req.companyId, payload.managerEmployeeId);
-    if (managerCheck.error) {
-      return sendError(res, managerCheck.error, 400);
-    }
+    if (payload.managerEmployeeId) {
+      const managerCheck = await ensureManagerEmployee(req.companyId, payload.managerEmployeeId);
+      if (managerCheck.error) {
+        return sendError(res, managerCheck.error, 400);
+      }
 
-    region.managerEmployeeId = payload.managerEmployeeId;
+      region.managerEmployeeId = payload.managerEmployeeId;
+    } else {
+      region.managerEmployeeId = null;
+    }
   }
 
   await region.save();

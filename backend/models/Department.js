@@ -20,7 +20,7 @@ const Department = createTenantModel({
     },
     effectiveDate: {
       type: Date,
-      required: true,
+      default: Date.now,
     },
     status: {
       type: String,
