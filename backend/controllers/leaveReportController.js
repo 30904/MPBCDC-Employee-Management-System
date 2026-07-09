@@ -40,7 +40,15 @@ async function buildLeaveSummaryReport(companyId, year) {
         $group: {
           _id: '$leaveTypeId',
           applications: { $sum: 1 },
-          chargeableDays: { $sum: { $add: ['$workingDays', '$sandwichDaysApplied'] } },
+          chargeableDays: {
+            $sum: {
+              $cond: [
+                { $gt: [{ $ifNull: ['$chargeableDays', 0] }, 0] },
+                '$chargeableDays',
+                { $add: [{ $ifNull: ['$workingDays', 0] }, { $ifNull: ['$sandwichDaysApplied', 0] }] },
+              ],
+            },
+          },
         },
       },
       { $sort: { applications: -1 } },
@@ -225,7 +233,12 @@ async function getLeaveDetailsReport(req, res) {
     submittedAt: doc.submittedAt || doc.createdAt,
     workingDays: doc.workingDays || 0,
     sandwichDaysApplied: doc.sandwichDaysApplied || 0,
-    chargeableDays: Number((Number(doc.workingDays || 0) + Number(doc.sandwichDaysApplied || 0)).toFixed(2)),
+    chargeableDays: Number(
+      (doc.chargeableDays > 0
+        ? doc.chargeableDays
+        : Number(doc.workingDays || 0) + Number(doc.sandwichDaysApplied || 0)
+      ).toFixed(2)
+    ),
     employee: doc.employeeId
       ? {
           id: doc.employeeId._id || doc.employeeId,

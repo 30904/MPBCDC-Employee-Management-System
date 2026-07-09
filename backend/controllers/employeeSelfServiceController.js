@@ -33,6 +33,8 @@ async function previewLeave(req, res) {
       fromDate: req.query.fromDate || req.body?.fromDate,
       toDate: req.query.toDate || req.body?.toDate,
       reason: req.body?.reason,
+      fromSession: req.query.fromSession || req.body?.fromSession,
+      toSession: req.query.toSession || req.body?.toSession,
       isHalfDay: req.query.isHalfDay || req.body?.isHalfDay,
     },
   });

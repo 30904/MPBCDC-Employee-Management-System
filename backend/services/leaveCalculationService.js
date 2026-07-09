@@ -1,9 +1,16 @@
+const {
+  LEAVE_SESSIONS,
+  fromSessionDayFraction,
+  toSessionDayFraction,
+  calculateSameDaySessionCharge,
+} = require('../constants/leaveSessions');
+
 /**
  * Leave day calculations — working days, sandwich rule, holiday overlap.
  *
  * Sandwich rule (when enabled on leave type):
  * weekends and holidays that fall inside the leave date range are also charged.
- * Chargeable days = workingDays + sandwichDaysApplied.
+ * Chargeable days = workingDays + sandwichDaysApplied, adjusted for from/to sessions.
  */
 
 function startOfDay(value) {
@@ -86,6 +93,65 @@ function calculateLeaveDays({ fromDate, toDate, holidays = [], applySandwichRule
   };
 }
 
+function isChargeableCalendarDay(day, holidaySet, applySandwichRule) {
+  const holiday = holidaySet.has(day.toDateString());
+  const weekend = isWeekend(day);
+
+  if (!holiday && !weekend) {
+    return true;
+  }
+
+  return Boolean(applySandwichRule) && (holiday || weekend);
+}
+
+/**
+ * Apply from/to session fractions on top of working-day + sandwich calculation.
+ *
+ * From session: FIRST_HALF = full day, SECOND_HALF = half day from afternoon.
+ * To session: FIRST_HALF = half day until morning, SECOND_HALF = full day.
+ */
+function calculateLeaveDaysWithSessions({
+  fromDate,
+  toDate,
+  holidays = [],
+  applySandwichRule = false,
+  fromSession = LEAVE_SESSIONS.FIRST_HALF,
+  toSession = LEAVE_SESSIONS.SECOND_HALF,
+}) {
+  const leaveDays = calculateLeaveDays({ fromDate, toDate, holidays, applySandwichRule });
+  const holidaySet = buildHolidaySet(holidays);
+  const from = startOfDay(fromDate);
+  const to = startOfDay(toDate);
+  const sameDay = from.getTime() === to.getTime();
+
+  if (sameDay) {
+    if (!isChargeableCalendarDay(from, holidaySet, applySandwichRule)) {
+      return { ...leaveDays, chargeableDays: 0 };
+    }
+
+    const sameDayCharge = calculateSameDaySessionCharge(fromSession, toSession);
+    return {
+      ...leaveDays,
+      chargeableDays: sameDayCharge == null ? 0 : Number(sameDayCharge.toFixed(2)),
+    };
+  }
+
+  let chargeableDays = Number(leaveDays.chargeableDays || 0);
+
+  if (isChargeableCalendarDay(from, holidaySet, applySandwichRule)) {
+    chargeableDays -= 1 - fromSessionDayFraction(fromSession);
+  }
+
+  if (isChargeableCalendarDay(to, holidaySet, applySandwichRule)) {
+    chargeableDays -= 1 - toSessionDayFraction(toSession);
+  }
+
+  return {
+    ...leaveDays,
+    chargeableDays: Number(Math.max(0, chargeableDays).toFixed(2)),
+  };
+}
+
 /** Excel sheet alias for sandwich / working-day calculation. */
 function calculateDays({ fromDate, toDate, holidays = [], applySandwichRule = false, regionId = null }) {
   return calculateLeaveDays({
@@ -99,6 +165,7 @@ function calculateDays({ fromDate, toDate, holidays = [], applySandwichRule = fa
 
 module.exports = {
   calculateLeaveDays,
+  calculateLeaveDaysWithSessions,
   calculateDays,
   eachDayInclusive,
   buildHolidaySet,

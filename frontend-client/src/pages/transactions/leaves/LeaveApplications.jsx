@@ -3,6 +3,7 @@ import { fetchLeaveApplications } from '../../../api/leaveApplicationsApi.js';
 import EmptyState from '../../../components/EmptyState.jsx';
 import { getApiErrorMessage } from '../../../utils/apiError.js';
 import { formatDisplayDate } from '../../../utils/dateUtils.js';
+import { applicationChargeableDays } from '../../../utils/leaveDisplay.js';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All statuses' },
@@ -120,7 +121,7 @@ export default function LeaveApplications() {
                     <td>{formatDate(application.fromDate)}</td>
                     <td>{formatDate(application.toDate)}</td>
                     <td>
-                      {(application.workingDays ?? 0) + (application.sandwichDaysApplied ?? 0)}
+                      {applicationChargeableDays(application)}
                       {application.sandwichDaysApplied > 0
                         ? ` (${application.workingDays ?? 0}+${application.sandwichDaysApplied} sandwich)`
                         : ''}

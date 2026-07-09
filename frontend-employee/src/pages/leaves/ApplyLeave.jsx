@@ -4,11 +4,15 @@ import PageHeader from '../../components/PageHeader.jsx';
 import {
   createLeaveDraft,
   fetchLeaveTypeOptions,
+  LEAVE_SESSION_OPTIONS,
   previewLeaveDays,
   submitLeaveApplication,
 } from '../../api/leaveApi.js';
 import { uploadPdfFile } from '../../api/upload.js';
 import { getApiErrorMessage } from '../../api/response.js';
+
+const DEFAULT_FROM_SESSION = 'FIRST_HALF';
+const DEFAULT_TO_SESSION = 'SECOND_HALF';
 
 export default function ApplyLeave() {
   const navigate = useNavigate();
@@ -16,7 +20,8 @@ export default function ApplyLeave() {
   const [leaveTypeId, setLeaveTypeId] = useState('');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
-  const [isHalfDay, setIsHalfDay] = useState(false);
+  const [fromSession, setFromSession] = useState(DEFAULT_FROM_SESSION);
+  const [toSession, setToSession] = useState(DEFAULT_TO_SESSION);
   const [reason, setReason] = useState('');
   const [attachmentFile, setAttachmentFile] = useState(null);
   const [attachmentPath, setAttachmentPath] = useState('');
@@ -72,10 +77,11 @@ export default function ApplyLeave() {
   }, []);
 
   useEffect(() => {
-    if (!halfDayAllowed && isHalfDay) {
-      setIsHalfDay(false);
+    if (!halfDayAllowed) {
+      setFromSession(DEFAULT_FROM_SESSION);
+      setToSession(DEFAULT_TO_SESSION);
     }
-  }, [halfDayAllowed, isHalfDay]);
+  }, [halfDayAllowed]);
 
   useEffect(() => {
     if (!leaveTypeId || !fromDate || !toDate) {
@@ -90,7 +96,13 @@ export default function ApplyLeave() {
       setPreviewError('');
 
       try {
-        const result = await previewLeaveDays({ leaveTypeId, fromDate, toDate, isHalfDay });
+        const result = await previewLeaveDays({
+          leaveTypeId,
+          fromDate,
+          toDate,
+          fromSession: halfDayAllowed ? fromSession : DEFAULT_FROM_SESSION,
+          toSession: halfDayAllowed ? toSession : DEFAULT_TO_SESSION,
+        });
         if (!cancelled) {
           setPreview(result);
         }
@@ -110,7 +122,7 @@ export default function ApplyLeave() {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [leaveTypeId, fromDate, toDate, isHalfDay]);
+  }, [leaveTypeId, fromDate, toDate, fromSession, toSession, halfDayAllowed]);
 
   async function buildPayload() {
     let resolvedAttachmentPath = attachmentPath;
@@ -125,7 +137,8 @@ export default function ApplyLeave() {
       leaveTypeId,
       fromDate,
       toDate,
-      isHalfDay: halfDayAllowed ? isHalfDay : false,
+      fromSession: halfDayAllowed ? fromSession : DEFAULT_FROM_SESSION,
+      toSession: halfDayAllowed ? toSession : DEFAULT_TO_SESSION,
       reason: reason.trim(),
       attachmentPath: resolvedAttachmentPath,
     };
@@ -229,6 +242,18 @@ export default function ApplyLeave() {
                   required
                 />
               </label>
+              {halfDayAllowed && (
+                <label>
+                  From Session
+                  <select value={fromSession} onChange={(event) => setFromSession(event.target.value)} required>
+                    {LEAVE_SESSION_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <label>
                 To Date
                 <input
@@ -239,13 +264,15 @@ export default function ApplyLeave() {
                 />
               </label>
               {halfDayAllowed && (
-                <label className="checkbox-field">
-                  <span>Half Day</span>
-                  <input
-                    type="checkbox"
-                    checked={isHalfDay}
-                    onChange={(event) => setIsHalfDay(event.target.checked)}
-                  />
+                <label>
+                  To Session
+                  <select value={toSession} onChange={(event) => setToSession(event.target.value)} required>
+                    {LEAVE_SESSION_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
                 </label>
               )}
             </div>
@@ -293,6 +320,12 @@ export default function ApplyLeave() {
                 )}
 
                 <div className="eligibility-derived">
+                  <p>
+                    <strong>From session:</strong> {preview.fromSession === 'SECOND_HALF' ? 'Second Half' : 'First Half'}
+                  </p>
+                  <p>
+                    <strong>To session:</strong> {preview.toSession === 'FIRST_HALF' ? 'First Half' : 'Second Half'}
+                  </p>
                   <p>
                     <strong>Working days:</strong> {preview.workingDays}
                   </p>

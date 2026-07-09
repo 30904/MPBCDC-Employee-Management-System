@@ -8,8 +8,14 @@ const LeaveBalance = require('../models/LeaveBalance');
 const AppError = require('../utils/AppError');
 const { AUTO_NUMBER_PREFIXES } = require('../utils/autoNumberPrefixes');
 const autoNumberService = require('./autoNumberService');
-const { calculateLeaveDays } = require('./leaveCalculationService');
+const { calculateLeaveDaysWithSessions } = require('./leaveCalculationService');
 const { LEAVE_APPLICATION_STATUS } = require('../constants/leaveWorkflowStates');
+const {
+  LEAVE_SESSIONS,
+  SESSION_ORDER,
+  normalizeLeaveSession,
+  usesPartialSessions,
+} = require('../constants/leaveSessions');
 const { parsePagination, executePaginatedQuery } = require('../utils/pagination');
 
 function tenantApplications(companyId) {
@@ -17,7 +23,7 @@ function tenantApplications(companyId) {
 }
 
 function validateCreatePayload(body = {}) {
-  const { leaveTypeId, fromDate, toDate, reason, isHalfDay, attachmentPath } = body;
+  const { leaveTypeId, fromDate, toDate, reason, isHalfDay, attachmentPath, fromSession, toSession } = body;
 
   if (!leaveTypeId || !mongoose.Types.ObjectId.isValid(leaveTypeId)) {
     throw new AppError('leaveTypeId is required', 400, 'VALIDATION_ERROR');
@@ -38,9 +44,19 @@ function validateCreatePayload(body = {}) {
     throw new AppError('fromDate cannot be after toDate', 400, 'VALIDATION_ERROR');
   }
 
-  const halfDay = isHalfDay === true || isHalfDay === 'true';
-  if (halfDay && from.toDateString() !== to.toDateString()) {
-    throw new AppError('Half-day leave must have same fromDate and toDate', 400, 'VALIDATION_ERROR');
+  const sameDay = from.toDateString() === to.toDateString();
+  const legacyHalfDay = isHalfDay === true || isHalfDay === 'true';
+
+  let resolvedFromSession = normalizeLeaveSession(fromSession, LEAVE_SESSIONS.FIRST_HALF);
+  let resolvedToSession = normalizeLeaveSession(toSession, LEAVE_SESSIONS.SECOND_HALF);
+
+  if (legacyHalfDay && fromSession == null && toSession == null) {
+    resolvedFromSession = LEAVE_SESSIONS.FIRST_HALF;
+    resolvedToSession = LEAVE_SESSIONS.FIRST_HALF;
+  }
+
+  if (sameDay && SESSION_ORDER[resolvedFromSession] > SESSION_ORDER[resolvedToSession]) {
+    throw new AppError('From session cannot be after to session on the same day', 400, 'VALIDATION_ERROR');
   }
 
   return {
@@ -48,7 +64,9 @@ function validateCreatePayload(body = {}) {
     fromDate: from,
     toDate: to,
     reason: reason ? String(reason).trim() : '',
-    isHalfDay: halfDay,
+    fromSession: resolvedFromSession,
+    toSession: resolvedToSession,
+    isHalfDay: legacyHalfDay || usesPartialSessions(resolvedFromSession, resolvedToSession, sameDay),
     attachmentPath: attachmentPath ? String(attachmentPath).trim() : '',
   };
 }
@@ -115,21 +133,44 @@ async function resolveBalanceBefore({ companyId, employeeId, leaveTypeId, period
   return Number(currentBalance.closingBalance || 0);
 }
 
-function assertHalfDayAllowed(leaveType, isHalfDay) {
-  if (isHalfDay && leaveType.allowsHalfDay === false) {
+function assertSessionsAllowed(leaveType, parsed) {
+  const sameDay = parsed.fromDate.toDateString() === parsed.toDate.toDateString();
+  const partial = usesPartialSessions(parsed.fromSession, parsed.toSession, sameDay);
+
+  if (!partial) {
+    return;
+  }
+
+  if (leaveType.allowsHalfDay === false) {
     throw new AppError('Half-day leave is not allowed for this leave type', 400, 'VALIDATION_ERROR');
   }
 }
 
+function resolveSessionsForLeaveType(leaveType, parsed) {
+  const sameDay = parsed.fromDate.toDateString() === parsed.toDate.toDateString();
+
+  if (leaveType.allowsHalfDay === false) {
+    return {
+      ...parsed,
+      fromSession: LEAVE_SESSIONS.FIRST_HALF,
+      toSession: LEAVE_SESSIONS.SECOND_HALF,
+      isHalfDay: false,
+    };
+  }
+
+  return parsed;
+}
+
 async function buildLeavePreview({ companyId, payload, employeeId = null, requireSufficientBalance = false }) {
-  const parsed = validateCreatePayload(payload);
+  let parsed = validateCreatePayload(payload);
 
   const leaveType = await LeaveType.forTenant(companyId).findById(parsed.leaveTypeId);
   if (!leaveType || !leaveType.isActive) {
     throw new AppError('Leave type not found or inactive', 404, 'NOT_FOUND');
   }
 
-  assertHalfDayAllowed(leaveType, parsed.isHalfDay);
+  parsed = resolveSessionsForLeaveType(leaveType, parsed);
+  assertSessionsAllowed(leaveType, parsed);
 
   const regionId = await resolveEmployeeRegionId({ companyId, employeeId });
   const holidays = await loadHolidayDates({
@@ -139,20 +180,24 @@ async function buildLeavePreview({ companyId, payload, employeeId = null, requir
     regionId,
   });
 
-  const leaveDays = calculateLeaveDays({
+  const leaveDays = calculateLeaveDaysWithSessions({
     fromDate: parsed.fromDate,
     toDate: parsed.toDate,
     holidays,
     applySandwichRule: Boolean(leaveType.applySandwichRule),
-    regionId,
+    fromSession: parsed.fromSession,
+    toSession: parsed.toSession,
   });
 
-  let chargeableDays = Number(leaveDays.chargeableDays || 0);
-  if (parsed.isHalfDay) {
-    if (chargeableDays < 1) {
-      throw new AppError('Half-day leave cannot be applied on non-working/non-chargeable date', 400, 'VALIDATION_ERROR');
-    }
-    chargeableDays = 0.5;
+  const chargeableDays = Number(leaveDays.chargeableDays || 0);
+  const sameDay = parsed.fromDate.toDateString() === parsed.toDate.toDateString();
+
+  if (chargeableDays <= 0) {
+    throw new AppError('Leave cannot be applied with no chargeable days in the selected range', 400, 'VALIDATION_ERROR');
+  }
+
+  if (sameDay && usesPartialSessions(parsed.fromSession, parsed.toSession, true) && chargeableDays < 0.5) {
+    throw new AppError('Half-day leave cannot be applied on non-working/non-chargeable date', 400, 'VALIDATION_ERROR');
   }
 
   const period = String(parsed.fromDate.getFullYear());
@@ -199,6 +244,8 @@ async function previewLeaveDays({ companyId, payload }) {
     allowsHalfDay: preview.leaveType.allowsHalfDay !== false,
     fromDate: preview.parsed.fromDate,
     toDate: preview.parsed.toDate,
+    fromSession: preview.parsed.fromSession,
+    toSession: preview.parsed.toSession,
     isHalfDay: preview.parsed.isHalfDay,
     regionId: preview.regionId,
     workingDays: preview.workingDays,
@@ -219,7 +266,10 @@ function buildApplicationFields({ preview, employeeId, parsed, status, applicati
     employeeId,
     leaveTypeId: parsed.leaveTypeId,
     reason: parsed.reason,
+    fromSession: parsed.fromSession,
+    toSession: parsed.toSession,
     isHalfDay: parsed.isHalfDay,
+    chargeableDays: preview.chargeableDays,
     attachmentPath: parsed.attachmentPath,
     fromDate: parsed.fromDate,
     toDate: parsed.toDate,
@@ -286,6 +336,8 @@ async function submitApplication({ companyId, employeeId, applicationId }) {
       fromDate: application.fromDate,
       toDate: application.toDate,
       reason: application.reason,
+      fromSession: application.fromSession,
+      toSession: application.toSession,
       isHalfDay: application.isHalfDay,
       attachmentPath: application.attachmentPath,
     },
@@ -294,7 +346,10 @@ async function submitApplication({ companyId, employeeId, applicationId }) {
   });
 
   application.reason = preview.parsed.reason;
+  application.fromSession = preview.parsed.fromSession;
+  application.toSession = preview.parsed.toSession;
   application.isHalfDay = preview.parsed.isHalfDay;
+  application.chargeableDays = preview.chargeableDays;
   application.attachmentPath = preview.parsed.attachmentPath;
   application.totalDays = preview.totalCalendarDays;
   application.workingDays = preview.workingDays;
@@ -386,6 +441,11 @@ async function getApplicationById({ companyId, applicationId, employeeId = null 
  * Chargeable days used for balance deduction.
  */
 function getChargeableDays(application) {
+  const stored = Number(application.chargeableDays);
+  if (Number.isFinite(stored) && stored > 0) {
+    return stored;
+  }
+
   if (application.isHalfDay) {
     return 0.5;
   }

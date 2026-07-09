@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const createTenantModel = require('./createTenantModel');
+const { LEAVE_SESSIONS } = require('../constants/leaveSessions');
 
 const LeaveApplication = createTenantModel({
   modelName: 'LeaveApplication',
@@ -9,6 +10,17 @@ const LeaveApplication = createTenantModel({
     employeeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Employee' },
     leaveTypeId: { type: mongoose.Schema.Types.ObjectId, ref: 'LeaveType' },
     isHalfDay: { type: Boolean, default: false },
+    fromSession: {
+      type: String,
+      enum: Object.values(LEAVE_SESSIONS),
+      default: LEAVE_SESSIONS.FIRST_HALF,
+    },
+    toSession: {
+      type: String,
+      enum: Object.values(LEAVE_SESSIONS),
+      default: LEAVE_SESSIONS.SECOND_HALF,
+    },
+    chargeableDays: { type: Number, min: 0, default: 0 },
     attachmentPath: { type: String, trim: true, default: '' },
     status: { type: String, trim: true },
     reason: { type: String, trim: true, maxlength: 1000 },

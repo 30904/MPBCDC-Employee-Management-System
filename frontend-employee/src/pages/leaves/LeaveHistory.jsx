@@ -3,6 +3,7 @@ import PageHeader from '../../components/PageHeader.jsx';
 import { fetchMyLeaveHistory, submitLeaveDraft } from '../../api/leaveApi.js';
 import { getApiErrorMessage } from '../../api/response.js';
 import { formatDisplayDate } from '../../utils/dateUtils.js';
+import { applicationChargeableDays } from '../../utils/leaveDisplay.js';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All statuses' },
@@ -120,7 +121,7 @@ export default function LeaveHistory() {
                     <td>{formatDate(application.fromDate)}</td>
                     <td>{formatDate(application.toDate)}</td>
                     <td>
-                      {(application.workingDays ?? 0) + (application.sandwichDaysApplied ?? 0)}
+                      {applicationChargeableDays(application)}
                       {application.sandwichDaysApplied > 0
                         ? ` (${application.workingDays ?? 0}+${application.sandwichDaysApplied} sandwich)`
                         : ''}

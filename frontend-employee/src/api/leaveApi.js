@@ -6,12 +6,24 @@ export async function fetchLeaveTypeOptions() {
   return unwrapApiData(response);
 }
 
-export async function previewLeaveDays({ leaveTypeId, fromDate, toDate, isHalfDay = false }) {
+export const LEAVE_SESSION_OPTIONS = [
+  { value: 'FIRST_HALF', label: 'First Half' },
+  { value: 'SECOND_HALF', label: 'Second Half' },
+];
+
+export async function previewLeaveDays({
+  leaveTypeId,
+  fromDate,
+  toDate,
+  fromSession = 'FIRST_HALF',
+  toSession = 'SECOND_HALF',
+}) {
   const params = new URLSearchParams({
     leaveTypeId,
     fromDate,
     toDate,
-    isHalfDay: String(Boolean(isHalfDay)),
+    fromSession,
+    toSession,
   });
   const response = await apiClient.get(`/leaves/preview?${params.toString()}`);
   return unwrapApiData(response);
