@@ -5,6 +5,7 @@ import SubModuleGuard from './routes/SubModuleGuard.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Login from './pages/Login.jsx';
 import Reports from './pages/reports/Reports.jsx';
+import OrganizationSetup from './pages/settings/organization/OrganizationSetup.jsx';
 import DepartmentMaster from './pages/settings/organization/DepartmentMaster.jsx';
 import Designations from './pages/settings/organization/Designations.jsx';
 import GradeMaster from './pages/settings/organization/GradeMaster.jsx';
@@ -37,6 +38,14 @@ export default function App() {
               element={
                 <SubModuleGuard roles={[ADMIN]}>
                   <SettingsHub />
+                </SubModuleGuard>
+              }
+            />
+            <Route
+              path="/settings/organization"
+              element={
+                <SubModuleGuard roles={[ADMIN]}>
+                  <OrganizationSetup />
                 </SubModuleGuard>
               }
             />

@@ -3,6 +3,11 @@ import PageHeader from '../../components/PageHeader.jsx';
 
 const SETTINGS_MODULES = [
   {
+    to: '/settings/organization',
+    title: 'Organization Setup',
+    description: 'Configure departments, designations, grades, regions, and districts.',
+  },
+  {
     to: '/settings/employees',
     title: 'Employee Management',
     description: 'Create and maintain employee master records and ESS accounts.',
@@ -24,7 +29,7 @@ export default function SettingsHub() {
     <div>
       <PageHeader
         title="Settings"
-        subtitle="Organization configuration for employees, loans, and leave"
+        subtitle="Organization, employee, loan, and leave configuration"
       />
       <div className="card-grid">
         {SETTINGS_MODULES.map((module) => (

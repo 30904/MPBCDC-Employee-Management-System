@@ -67,6 +67,10 @@ export const menuSections = [
 
 export const settingsRouteRules = [
   {
+    pathPrefix: '/settings/organization',
+    roles: [ADMIN],
+  },
+  {
     pathPrefix: '/settings/employees',
     roles: [ADMIN],
   },
