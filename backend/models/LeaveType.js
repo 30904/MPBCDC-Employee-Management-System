@@ -51,6 +51,15 @@ const LeaveType = createTenantModel({
       type: Boolean,
       default: false,
     },
+    maxAccumulation: {
+      type: Number,
+      default: 300,
+      min: [0, 'maxAccumulation cannot be negative'],
+    },
+    hrApprovalRequired: {
+      type: Boolean,
+      default: false,
+    },
     isActive: {
       type: Boolean,
       default: true,

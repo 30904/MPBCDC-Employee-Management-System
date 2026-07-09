@@ -230,6 +230,22 @@ async function accrueForPeriod({ companyId, period, employeeIds = [], asOfDate =
         });
       }
 
+      const limit = Number(rule.accumulationLimit);
+      const nextAccrued = Number(((Number(balance.accrued) || 0) + days).toFixed(2));
+      const projectedClosing = computeClosingBalance({
+        ...balance.toObject(),
+        accrued: nextAccrued,
+      });
+
+      if (Number.isFinite(limit) && limit > 0 && projectedClosing > limit) {
+        const allowedDays = Number((limit - computeClosingBalance(balance)).toFixed(2));
+        if (allowedDays <= 0) {
+          balancesSkipped += 1;
+          continue;
+        }
+        days = allowedDays;
+      }
+
       balance.accrued = Number(((Number(balance.accrued) || 0) + days).toFixed(2));
       balance.closingBalance = computeClosingBalance(balance);
       balance.lastAccruedAt = asOf;

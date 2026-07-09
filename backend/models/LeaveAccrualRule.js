@@ -56,6 +56,11 @@ const LeaveAccrualRule = createTenantModel({
         message: 'scheduledMonths must contain values from 1 to 12',
       },
     },
+    accumulationLimit: {
+      type: Number,
+      default: 300,
+      min: [0, 'accumulationLimit cannot be negative'],
+    },
     applyProRata: {
       type: Boolean,
       default: true,

@@ -48,6 +48,7 @@ async function seedDefaultLeaveAccrualRules() {
     accrualDays: 15,
     scheduledMonths: [1, 7],
     applyProRata: true,
+    accumulationLimit: 300,
     effectiveDate: startOfUtcDay('2026-01-01'),
     status: 'Active',
   };

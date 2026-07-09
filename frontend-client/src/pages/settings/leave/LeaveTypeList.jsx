@@ -17,6 +17,7 @@ function ruleSummary(leaveType) {
   if (leaveType.isEncashable) labels.push('Encash');
   if (leaveType.allowsCarryForward) labels.push('Carry-forward');
   if (leaveType.applySandwichRule) labels.push('Sandwich');
+  if (leaveType.maxAccumulation) labels.push(`Cap ${leaveType.maxAccumulation}`);
 
   return labels.length > 0 ? labels.join(', ') : '—';
 }

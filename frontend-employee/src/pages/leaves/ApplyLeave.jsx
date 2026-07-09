@@ -1,7 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PageHeader from '../../components/PageHeader.jsx';
-import { fetchLeaveTypeOptions, previewLeaveDays, submitLeaveApplication } from '../../api/leaveApi.js';
+import {
+  createLeaveDraft,
+  fetchLeaveTypeOptions,
+  previewLeaveDays,
+  submitLeaveApplication,
+} from '../../api/leaveApi.js';
+import { uploadPdfFile } from '../../api/upload.js';
 import { getApiErrorMessage } from '../../api/response.js';
 
 export default function ApplyLeave() {
@@ -12,14 +18,24 @@ export default function ApplyLeave() {
   const [toDate, setToDate] = useState('');
   const [isHalfDay, setIsHalfDay] = useState(false);
   const [reason, setReason] = useState('');
+  const [attachmentFile, setAttachmentFile] = useState(null);
+  const [attachmentPath, setAttachmentPath] = useState('');
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
   const [error, setError] = useState('');
   const [previewError, setPreviewError] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState('');
+
+  const selectedType = useMemo(
+    () => leaveTypes.find((type) => type._id === leaveTypeId) ?? null,
+    [leaveTypes, leaveTypeId]
+  );
+
+  const halfDayAllowed = selectedType?.allowsHalfDay !== false;
 
   useEffect(() => {
     let cancelled = false;
@@ -52,6 +68,12 @@ export default function ApplyLeave() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!halfDayAllowed && isHalfDay) {
+      setIsHalfDay(false);
+    }
+  }, [halfDayAllowed, isHalfDay]);
 
   useEffect(() => {
     if (!leaveTypeId || !fromDate || !toDate) {
@@ -88,6 +110,25 @@ export default function ApplyLeave() {
     };
   }, [leaveTypeId, fromDate, toDate, isHalfDay]);
 
+  async function buildPayload() {
+    let resolvedAttachmentPath = attachmentPath;
+
+    if (attachmentFile) {
+      const uploaded = await uploadPdfFile(attachmentFile);
+      resolvedAttachmentPath = uploaded.attachmentPath || '';
+      setAttachmentPath(resolvedAttachmentPath);
+    }
+
+    return {
+      leaveTypeId,
+      fromDate,
+      toDate,
+      isHalfDay: halfDayAllowed ? isHalfDay : false,
+      reason: reason.trim(),
+      attachmentPath: resolvedAttachmentPath,
+    };
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setSubmitError('');
@@ -95,13 +136,8 @@ export default function ApplyLeave() {
 
     setSubmitting(true);
     try {
-      const application = await submitLeaveApplication({
-        leaveTypeId,
-        fromDate,
-        toDate,
-        isHalfDay,
-        reason: reason.trim(),
-      });
+      const payload = await buildPayload();
+      const application = await submitLeaveApplication(payload);
       setSubmitSuccess(`Application ${application.applicationNo} submitted successfully.`);
 
       window.setTimeout(() => {
@@ -111,6 +147,22 @@ export default function ApplyLeave() {
       setSubmitError(getApiErrorMessage(err, 'Failed to submit leave application.'));
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleSaveDraft() {
+    setSubmitError('');
+    setSubmitSuccess('');
+    setSavingDraft(true);
+
+    try {
+      const payload = await buildPayload();
+      const draft = await createLeaveDraft(payload);
+      setSubmitSuccess(`Draft ${draft.applicationNo} saved. Submit it from Leave History when ready.`);
+    } catch (err) {
+      setSubmitError(getApiErrorMessage(err, 'Failed to save leave draft.'));
+    } finally {
+      setSavingDraft(false);
     }
   }
 
@@ -160,14 +212,17 @@ export default function ApplyLeave() {
                   required
                 />
               </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 24 }}>
-                <input
-                  type="checkbox"
-                  checked={isHalfDay}
-                  onChange={(event) => setIsHalfDay(event.target.checked)}
-                />
-                Half Day
-              </label>
+
+              {halfDayAllowed && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 24 }}>
+                  <input
+                    type="checkbox"
+                    checked={isHalfDay}
+                    onChange={(event) => setIsHalfDay(event.target.checked)}
+                  />
+                  Half Day
+                </label>
+              )}
             </div>
 
             <label>
@@ -178,6 +233,15 @@ export default function ApplyLeave() {
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
                 placeholder="Brief reason for leave request"
+              />
+            </label>
+
+            <label>
+              Supporting document (PDF, max 5MB)
+              <input
+                type="file"
+                accept="application/pdf,.pdf"
+                onChange={(event) => setAttachmentFile(event.target.files?.[0] || null)}
               />
             </label>
 
@@ -226,13 +290,23 @@ export default function ApplyLeave() {
             {submitError && <div className="form-error">{submitError}</div>}
             {submitSuccess && <div className="form-success">{submitSuccess}</div>}
 
-            <button
-              type="submit"
-              className="primary-btn"
-              disabled={!leaveTypeId || !fromDate || !toDate || submitting || !preview?.sufficientBalance}
-            >
-              {submitting ? 'Submitting...' : 'Submit Leave Request'}
-            </button>
+            <div className="form-actions">
+              <button
+                type="button"
+                className="secondary-btn"
+                disabled={!leaveTypeId || !fromDate || !toDate || savingDraft || submitting}
+                onClick={handleSaveDraft}
+              >
+                {savingDraft ? 'Saving draft...' : 'Save Draft'}
+              </button>
+              <button
+                type="submit"
+                className="primary-btn"
+                disabled={!leaveTypeId || !fromDate || !toDate || submitting || !preview?.sufficientBalance}
+              >
+                {submitting ? 'Submitting...' : 'Submit Leave Request'}
+              </button>
+            </div>
           </form>
         )}
       </div>

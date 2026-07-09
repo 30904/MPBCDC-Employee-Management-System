@@ -15,6 +15,8 @@ const WRITABLE_FIELDS = [
   'allowsCarryForward',
   'maxCarryForwardDays',
   'applySandwichRule',
+  'maxAccumulation',
+  'hrApprovalRequired',
   'isActive',
 ];
 const REQUIRED_ON_CREATE = ['code', 'name', 'annualEntitlement'];
@@ -60,7 +62,7 @@ function pickLeaveTypePayload(body, { partial = false } = {}) {
     payload.description = String(payload.description).trim();
   }
 
-  ['allowsHalfDay', 'isEncashable', 'allowsCarryForward', 'applySandwichRule', 'isActive'].forEach(
+  ['allowsHalfDay', 'isEncashable', 'allowsCarryForward', 'applySandwichRule', 'hrApprovalRequired', 'isActive'].forEach(
     (field) => {
       if (payload[field] !== undefined) {
         payload[field] = parseBoolean(payload[field], field);
@@ -82,6 +84,14 @@ function pickLeaveTypePayload(body, { partial = false } = {}) {
       throw new AppError('maxCarryForwardDays must be a non-negative number', 400, 'VALIDATION_ERROR');
     }
     payload.maxCarryForwardDays = carryDays;
+  }
+
+  if (payload.maxAccumulation !== undefined) {
+    const cap = Number(payload.maxAccumulation);
+    if (Number.isNaN(cap) || cap < 0) {
+      throw new AppError('maxAccumulation must be a non-negative number', 400, 'VALIDATION_ERROR');
+    }
+    payload.maxAccumulation = cap;
   }
 
   if (payload.allowsCarryForward === false) {

@@ -6,7 +6,7 @@ const { sendSuccess, sendPaginatedSuccess } = require('../utils/apiResponse');
 const { parsePagination, executePaginatedQuery } = require('../utils/pagination');
 const { parseIsoDate, toIsoDateString, toDisplayDate, startOfUtcDay } = require('../utils/dateUtils');
 
-const WRITABLE_FIELDS = ['name', 'date', 'holidayType', 'regionId', 'description', 'isActive'];
+const WRITABLE_FIELDS = ['name', 'date', 'holidayType', 'state', 'regionId', 'description', 'isActive'];
 const REQUIRED_ON_CREATE = ['name', 'date', 'holidayType'];
 
 function tenantHolidays(req) {
@@ -103,6 +103,10 @@ function pickHolidayPayload(body, { partial = false } = {}) {
 
   if (payload.description !== undefined) {
     payload.description = String(payload.description).trim();
+  }
+
+  if (payload.state !== undefined) {
+    payload.state = String(payload.state).trim();
   }
 
   if (payload.holidayType !== undefined) {

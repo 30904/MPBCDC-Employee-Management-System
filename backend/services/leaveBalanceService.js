@@ -42,22 +42,11 @@ async function deductOnApproval({
   let balance = await Model.findOne({ employeeId, leaveTypeId, period });
 
   if (!balance) {
-    const leaveType = await LeaveType.forTenant(companyId).findById(leaveTypeId);
-    const entitlement = Number(leaveType?.annualEntitlement) || 0;
-
-    balance = await Model.create({
-      employeeId,
-      leaveTypeId,
-      period,
-      openingBalance: entitlement,
-      accrued: 0,
-      availed: 0,
-      lapsed: 0,
-      encashed: 0,
-      adjustment: 0,
-      closingBalance: entitlement,
-      remarks: `Opening balance seeded from ${leaveType?.code || 'leave type'} entitlement`,
-    });
+    throw new AppError(
+      `No leave balance ledger found for period ${period}`,
+      400,
+      'INSUFFICIENT_LEAVE_BALANCE'
+    );
   }
 
   const available = computeClosingBalance(balance);

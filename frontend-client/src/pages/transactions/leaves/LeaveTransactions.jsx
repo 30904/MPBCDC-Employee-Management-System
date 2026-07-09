@@ -3,7 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import ModuleShell from '../../../components/ModuleShell.jsx';
 import LeaveApplications from './LeaveApplications.jsx';
 import LeaveApprovals from './LeaveApprovals.jsx';
-import LeaveBalances from './LeaveBalances.jsx';
+import LeaveBalanceReport from './LeaveBalanceReport.jsx';
 
 const TABS = [
   { path: 'applications', label: 'Applications', end: true },
@@ -26,7 +26,7 @@ export default function LeaveTransactions() {
         <Route index element={<Navigate to="applications" replace />} />
         <Route path="applications" element={<LeaveApplications />} />
         <Route path="approvals" element={<LeaveApprovals />} />
-        <Route path="balances" element={<LeaveBalances />} />
+        <Route path="balances" element={<LeaveBalanceReport />} />
       </Route>
     </Routes>
   );

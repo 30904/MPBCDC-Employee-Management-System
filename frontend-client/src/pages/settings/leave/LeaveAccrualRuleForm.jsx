@@ -30,6 +30,7 @@ const EMPTY_FORM = {
   accrualFrequency: 'HALF_YEARLY',
   accrualDays: '15',
   scheduledMonths: [1, 7],
+  accumulationLimit: '300',
   applyProRata: true,
   effectiveDate: '',
   status: 'Active',
@@ -70,6 +71,10 @@ function toFormValues(initialValues) {
     scheduledMonths: Array.isArray(initialValues.scheduledMonths)
       ? [...initialValues.scheduledMonths]
       : [],
+    accumulationLimit:
+      initialValues.accumulationLimit === undefined || initialValues.accumulationLimit === null
+        ? '300'
+        : String(initialValues.accumulationLimit),
     applyProRata: initialValues.applyProRata !== false,
     effectiveDate: toDateInputValue(initialValues.effectiveDate),
     status: initialValues.status ?? 'Active',
@@ -85,6 +90,7 @@ function buildPayload(form) {
     accrualFrequency: form.accrualFrequency,
     accrualDays: Number(form.accrualDays),
     scheduledMonths: [...form.scheduledMonths].sort((a, b) => a - b),
+    accumulationLimit: Number(form.accumulationLimit || 0),
     applyProRata: form.applyProRata,
     effectiveDate: form.effectiveDate,
     status: form.status,
@@ -239,6 +245,17 @@ export default function LeaveAccrualRuleForm({
             onChange={(e) => updateField('accrualDays', e.target.value)}
             required
             placeholder="15"
+          />
+        </label>
+        <label>
+          Accumulation Limit
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={form.accumulationLimit}
+            onChange={(e) => updateField('accumulationLimit', e.target.value)}
+            placeholder="300"
           />
         </label>
         <label>

@@ -6,6 +6,7 @@ const FLAG_FIELDS = [
   { key: 'isEncashable', label: 'Encashable at year-end' },
   { key: 'allowsCarryForward', label: 'Allow carry-forward' },
   { key: 'applySandwichRule', label: 'Apply sandwich rule' },
+  { key: 'hrApprovalRequired', label: 'HR approval required (legacy flag)' },
 ];
 
 const EMPTY_FORM = {
@@ -17,7 +18,9 @@ const EMPTY_FORM = {
   isEncashable: false,
   allowsCarryForward: false,
   maxCarryForwardDays: '0',
+  maxAccumulation: '300',
   applySandwichRule: false,
+  hrApprovalRequired: false,
   isActive: true,
 };
 
@@ -41,7 +44,12 @@ function toFormValues(initialValues) {
       initialValues.maxCarryForwardDays === undefined || initialValues.maxCarryForwardDays === null
         ? '0'
         : String(initialValues.maxCarryForwardDays),
+    maxAccumulation:
+      initialValues.maxAccumulation === undefined || initialValues.maxAccumulation === null
+        ? '300'
+        : String(initialValues.maxAccumulation),
     applySandwichRule: Boolean(initialValues.applySandwichRule),
+    hrApprovalRequired: Boolean(initialValues.hrApprovalRequired),
     isActive: initialValues.isActive !== false,
   };
 }
@@ -56,7 +64,9 @@ function buildPayload(form) {
     isEncashable: form.isEncashable,
     allowsCarryForward: form.allowsCarryForward,
     maxCarryForwardDays: form.allowsCarryForward ? Number(form.maxCarryForwardDays || 0) : 0,
+    maxAccumulation: Number(form.maxAccumulation || 0),
     applySandwichRule: form.applySandwichRule,
+    hrApprovalRequired: form.hrApprovalRequired,
     isActive: form.isActive,
   };
 
@@ -149,6 +159,17 @@ export default function LeaveTypeForm({
             onChange={(e) => updateField('annualEntitlement', e.target.value)}
             required
             placeholder="12"
+          />
+        </label>
+        <label>
+          Max Accumulation (days)
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={form.maxAccumulation}
+            onChange={(e) => updateField('maxAccumulation', e.target.value)}
+            placeholder="300"
           />
         </label>
         <label>

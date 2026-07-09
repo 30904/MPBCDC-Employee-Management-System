@@ -116,6 +116,7 @@ router.get('/', (_req, res) => {
       leaveAccrualRules: `${API_BASE_PATH}/leave-accrual-rules?page=1&limit=20`,
       leaveAccrualRun: `${API_BASE_PATH}/leave-accrual-rules/run`,
       leaveBalances: `${API_BASE_PATH}/leave-balances?page=1&limit=20`,
+      leaveBalancesMine: `${API_BASE_PATH}/leave-balances/my?page=1&limit=20`,
       leaveYearEndClose: `${API_BASE_PATH}/leave-balances/year-end-close`,
       leaveApplications: `${API_BASE_PATH}/leave-applications?page=1&limit=20`,
       leaveApplicationQueue: `${API_BASE_PATH}/leave-applications/queue`,

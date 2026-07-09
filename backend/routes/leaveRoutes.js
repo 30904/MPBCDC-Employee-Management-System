@@ -17,6 +17,8 @@ router.use(assertEmployeeSelfScope);
 
 router.get('/types', asyncHandler(leaveController.leaveTypeOptions));
 router.get('/preview', asyncHandler(leaveController.previewLeave));
+router.post('/draft', asyncHandler(leaveController.createLeaveDraft));
+router.put('/:id/submit', asyncHandler(leaveController.submitLeaveDraft));
 router.post('/apply', asyncHandler(leaveController.applyLeave));
 router.get('/history', validatePaginationMiddleware, asyncHandler(leaveController.leaveHistory));
 router.get('/balance', validatePaginationMiddleware, asyncHandler(leaveController.leaveBalance));

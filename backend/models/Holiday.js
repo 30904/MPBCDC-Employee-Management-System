@@ -28,6 +28,12 @@ const Holiday = createTenantModel({
       uppercase: true,
       trim: true,
     },
+    state: {
+      type: String,
+      trim: true,
+      default: '',
+      maxlength: 80,
+    },
     regionId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Region',
