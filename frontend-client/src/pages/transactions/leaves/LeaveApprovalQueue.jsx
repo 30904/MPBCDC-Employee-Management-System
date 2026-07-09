@@ -5,6 +5,7 @@ import {
 } from '../../../api/leaveApplicationsApi.js';
 import EmptyState from '../../../components/EmptyState.jsx';
 import { getApiErrorMessage } from '../../../utils/apiError.js';
+import { formatDisplayDate } from '../../../utils/dateUtils.js';
 
 const PENDING_STATUSES = new Set(['Submitted', 'ManagerApproved', 'HRApproved']);
 
@@ -13,11 +14,7 @@ function formatDate(value) {
     return '—';
   }
 
-  return new Date(value).toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
+  return formatDisplayDate(value) || '—';
 }
 
 function formatQueueStatus(status) {

@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import PageHeader from '../../components/PageHeader.jsx';
-import { fetchMyLeaveHistory } from '../../api/leaveApi.js';
+import { fetchMyLeaveHistory, submitLeaveDraft } from '../../api/leaveApi.js';
 import { getApiErrorMessage } from '../../api/response.js';
+import { formatDisplayDate } from '../../utils/dateUtils.js';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All statuses' },
+  { value: 'Draft', label: 'Draft' },
   { value: 'Submitted', label: 'Submitted' },
   { value: 'Approved', label: 'Approved' },
   { value: 'Rejected', label: 'Rejected' },
@@ -24,11 +26,7 @@ function formatDate(value) {
     return '—';
   }
 
-  return new Date(value).toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
+  return formatDisplayDate(value) || '—';
 }
 
 export default function LeaveHistory() {
@@ -36,6 +34,8 @@ export default function LeaveHistory() {
   const [statusFilter, setStatusFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const [submittingId, setSubmittingId] = useState(null);
 
   const loadHistory = useCallback(async () => {
     setLoading(true);
@@ -55,6 +55,20 @@ export default function LeaveHistory() {
   useEffect(() => {
     loadHistory();
   }, [loadHistory]);
+
+  async function handleSubmitDraft(applicationId) {
+    setSubmittingId(applicationId);
+    setError('');
+
+    try {
+      await submitLeaveDraft(applicationId);
+      await loadHistory();
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Failed to submit draft application.'));
+    } finally {
+      setSubmittingId(null);
+    }
+  }
 
   return (
     <div>
@@ -93,6 +107,7 @@ export default function LeaveHistory() {
                   <th>Days</th>
                   <th>Status</th>
                   <th>Submitted</th>
+                  <th aria-label="Actions" />
                 </tr>
               </thead>
               <tbody>
@@ -112,6 +127,18 @@ export default function LeaveHistory() {
                     </td>
                     <td>{application.status}</td>
                     <td>{formatDate(application.submittedAt || application.createdAt)}</td>
+                    <td>
+                      {application.status === 'Draft' && (
+                        <button
+                          type="button"
+                          className="primary-btn btn-sm"
+                          disabled={submittingId === application._id}
+                          onClick={() => handleSubmitDraft(application._id)}
+                        >
+                          {submittingId === application._id ? 'Submitting...' : 'Submit'}
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

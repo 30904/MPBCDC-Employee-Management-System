@@ -8,6 +8,7 @@ const { API_BASE_PATH } = require('./config/api');
 const apiRoutes = require('./routes');
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 const { uploadDir } = require('./middleware/uploadMiddleware');
+const { startLeaveAccrualScheduler } = require('./jobs/leaveAccrualScheduler');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -56,6 +57,7 @@ async function startServer() {
     console.log(`MPBCDC API running on http://localhost:${PORT}`);
     console.log(`API base path: ${API_BASE_PATH}`);
     console.log(`Health check: http://localhost:${PORT}${API_BASE_PATH}/health`);
+    startLeaveAccrualScheduler();
   });
 }
 

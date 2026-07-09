@@ -16,6 +16,7 @@ const WRITABLE_FIELDS = [
   'accrualFrequency',
   'accrualDays',
   'scheduledMonths',
+  'accumulationLimit',
   'applyProRata',
   'effectiveDate',
   'status',
@@ -137,6 +138,14 @@ function pickRulePayload(body, { partial = false } = {}) {
       throw new AppError('accrualDays must be a non-negative number', 400, 'VALIDATION_ERROR');
     }
     payload.accrualDays = days;
+  }
+
+  if (payload.accumulationLimit !== undefined) {
+    const limit = Number(payload.accumulationLimit);
+    if (Number.isNaN(limit) || limit < 0) {
+      throw new AppError('accumulationLimit must be a non-negative number', 400, 'VALIDATION_ERROR');
+    }
+    payload.accumulationLimit = limit;
   }
 
   if (payload.scheduledMonths !== undefined) {

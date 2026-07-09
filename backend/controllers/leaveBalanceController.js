@@ -36,6 +36,33 @@ async function listLeaveBalances(req, res) {
   return sendPaginatedSuccess(res, docs, meta);
 }
 
+async function myLeaveBalances(req, res) {
+  const employeeId = req.selfScope?.employeeId;
+
+  if (!employeeId) {
+    throw new AppError('Employee context is required', 403, 'EMPLOYEE_SCOPE_REQUIRED');
+  }
+
+  const pagination = parsePagination(req.query);
+  const filter = { employeeId };
+
+  if (req.query.period) {
+    filter.period = String(req.query.period).trim();
+  }
+
+  if (req.query.leaveTypeId) {
+    filter.leaveTypeId = req.query.leaveTypeId;
+  }
+
+  const query = tenantLeaveBalances(req)
+    .find(filter)
+    .populate('leaveTypeId', 'code name')
+    .sort({ period: -1, updatedAt: -1 });
+
+  const { docs, pagination: meta } = await executePaginatedQuery(query, pagination);
+  return sendPaginatedSuccess(res, docs, meta);
+}
+
 async function runYearEndClose(req, res) {
   const sourcePeriodYear = Number(req.body?.sourcePeriodYear);
   const targetPeriodYear = Number(req.body?.targetPeriodYear || sourcePeriodYear + 1);
@@ -75,5 +102,6 @@ async function runYearEndClose(req, res) {
 
 module.exports = {
   listLeaveBalances,
+  myLeaveBalances,
   runYearEndClose,
 };

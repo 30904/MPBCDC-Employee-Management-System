@@ -6,6 +6,7 @@ import {
 } from '../../api/leaveReportsApi.js';
 import EmptyState from '../../components/EmptyState.jsx';
 import { getApiErrorMessage } from '../../utils/apiError.js';
+import { formatDisplayDate } from '../../utils/dateUtils.js';
 
 function numberValue(value) {
   if (value === undefined || value === null || Number.isNaN(Number(value))) {
@@ -250,8 +251,8 @@ export default function Reports() {
                         : '—'}
                     </td>
                     <td>{row.leaveType?.code ? `${row.leaveType.code} - ${row.leaveType.name}` : '—'}</td>
-                    <td>{row.fromDate ? new Date(row.fromDate).toLocaleDateString('en-IN') : '—'}</td>
-                    <td>{row.toDate ? new Date(row.toDate).toLocaleDateString('en-IN') : '—'}</td>
+                    <td>{row.fromDate ? formatDisplayDate(row.fromDate) : '—'}</td>
+                    <td>{row.toDate ? formatDisplayDate(row.toDate) : '—'}</td>
                     <td>{numberValue(row.chargeableDays)}</td>
                     <td>{row.status || '—'}</td>
                   </tr>

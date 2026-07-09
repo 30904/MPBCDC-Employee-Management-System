@@ -17,6 +17,16 @@ export async function previewLeaveDays({ leaveTypeId, fromDate, toDate, isHalfDa
   return unwrapApiData(response);
 }
 
+export async function createLeaveDraft(payload) {
+  const response = await apiClient.post('/leaves/draft', payload);
+  return unwrapApiData(response);
+}
+
+export async function submitLeaveDraft(applicationId) {
+  const response = await apiClient.put(`/leaves/${applicationId}/submit`);
+  return unwrapApiData(response);
+}
+
 export async function submitLeaveApplication(payload) {
   const response = await apiClient.post('/leaves/apply', payload);
   return unwrapApiData(response);
@@ -44,6 +54,6 @@ export async function fetchMyLeaveBalances({ page = 1, limit = 50, period, leave
     params.set('leaveTypeId', leaveTypeId);
   }
 
-  const response = await apiClient.get(`/leaves/balance?${params.toString()}`);
+  const response = await apiClient.get(`/leave-balances/my?${params.toString()}`);
   return unwrapPaginatedData(response);
 }

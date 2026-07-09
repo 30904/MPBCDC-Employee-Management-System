@@ -17,6 +17,7 @@ const {
   shouldDeductBalance,
 } = require('../services/leaveWorkflowService');
 const leaveBalanceService = require('../services/leaveBalanceService');
+const notificationService = require('../services/notificationService');
 
 function tenantApplications(req) {
   return LeaveApplication.forTenant(req.companyId);
@@ -112,6 +113,8 @@ async function recordApprovalDecision(req, res) {
       fromDate: application.fromDate,
       applicationNo: application.applicationNo,
     });
+
+    application.balanceAfter = Number(balance?.closingBalance ?? application.balanceAfter);
   }
 
   application.status = nextStatus;
@@ -126,6 +129,16 @@ async function recordApprovalDecision(req, res) {
     decision,
     remarks,
     nextApproverRole,
+  });
+
+  const decisionLabel = decision === LEAVE_APPROVAL_DECISION.APPROVED ? 'approved' : 'rejected';
+  await notificationService.notifyEmployee({
+    companyId: req.companyId,
+    employeeId: application.employeeId,
+    title: `Leave ${decisionLabel}`,
+    message: `Your leave application ${application.applicationNo} was ${decisionLabel}.`,
+    entityType: 'LEAVE_APPLICATION',
+    entityId: application._id,
   });
 
   return sendSuccess(res, {

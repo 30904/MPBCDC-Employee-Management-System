@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
-require('../models/Employee');
+const Employee = require('../models/Employee');
+const Region = require('../models/Region');
 const LeaveApplication = require('../models/LeaveApplication');
 const LeaveType = require('../models/LeaveType');
 const Holiday = require('../models/Holiday');
@@ -52,30 +53,90 @@ function validateCreatePayload(body = {}) {
   };
 }
 
-async function loadHolidayDates({ companyId, fromDate, toDate }) {
+async function resolveEmployeeRegionId({ companyId, employeeId }) {
+  if (!employeeId) {
+    return null;
+  }
+
+  const employee = await Employee.findOne({ _id: employeeId, companyId }).select('region');
+  if (!employee?.region) {
+    return null;
+  }
+
+  const regionValue = String(employee.region).trim();
+  const region = await Region.forTenant(companyId)
+    .findOne({
+      $or: [{ code: regionValue.toUpperCase() }, { name: regionValue }],
+    })
+    .select('_id');
+
+  return region?._id ?? null;
+}
+
+async function loadHolidayDates({ companyId, fromDate, toDate, regionId = null }) {
+  const orClauses = [{ holidayType: 'NATIONAL' }];
+
+  if (regionId) {
+    orClauses.push({ holidayType: 'REGIONAL', regionId });
+    orClauses.push({
+      holidayType: 'OPTIONAL',
+      $or: [{ regionId: null }, { regionId }],
+    });
+  } else {
+    orClauses.push({ holidayType: 'OPTIONAL', regionId: null });
+  }
+
   const holidays = await Holiday.forTenant(companyId)
     .find({
       isActive: { $ne: false },
       date: { $gte: fromDate, $lte: toDate },
+      $or: orClauses,
     })
     .select('date');
 
   return holidays.map((row) => row.date);
 }
 
-async function previewLeaveDays({ companyId, payload }) {
+async function resolveBalanceBefore({ companyId, employeeId, leaveTypeId, period }) {
+  if (!employeeId) {
+    return 0;
+  }
+
+  const currentBalance = await LeaveBalance.forTenant(companyId).findOne({
+    employeeId,
+    leaveTypeId,
+    period,
+  });
+
+  if (!currentBalance) {
+    return 0;
+  }
+
+  return Number(currentBalance.closingBalance || 0);
+}
+
+function assertHalfDayAllowed(leaveType, isHalfDay) {
+  if (isHalfDay && leaveType.allowsHalfDay === false) {
+    throw new AppError('Half-day leave is not allowed for this leave type', 400, 'VALIDATION_ERROR');
+  }
+}
+
+async function buildLeavePreview({ companyId, payload, employeeId = null, requireSufficientBalance = false }) {
   const parsed = validateCreatePayload(payload);
-  const employeeId = payload?.employeeId || null;
 
   const leaveType = await LeaveType.forTenant(companyId).findById(parsed.leaveTypeId);
   if (!leaveType || !leaveType.isActive) {
     throw new AppError('Leave type not found or inactive', 404, 'NOT_FOUND');
   }
 
+  assertHalfDayAllowed(leaveType, parsed.isHalfDay);
+
+  const regionId = await resolveEmployeeRegionId({ companyId, employeeId });
   const holidays = await loadHolidayDates({
     companyId,
     fromDate: parsed.fromDate,
     toDate: parsed.toDate,
+    regionId,
   });
 
   const leaveDays = calculateLeaveDays({
@@ -83,6 +144,7 @@ async function previewLeaveDays({ companyId, payload }) {
     toDate: parsed.toDate,
     holidays,
     applySandwichRule: Boolean(leaveType.applySandwichRule),
+    regionId,
   });
 
   let chargeableDays = Number(leaveDays.chargeableDays || 0);
@@ -94,59 +156,66 @@ async function previewLeaveDays({ companyId, payload }) {
   }
 
   const period = String(parsed.fromDate.getFullYear());
-  let balanceBefore = Number(leaveType.annualEntitlement || 0);
-
-  if (employeeId) {
-    const currentBalance = await LeaveBalance.forTenant(companyId).findOne({
-      employeeId,
-      leaveTypeId: leaveType._id,
-      period,
-    });
-
-    if (currentBalance) {
-      balanceBefore = Number(currentBalance.closingBalance || 0);
-    }
-  }
+  const balanceBefore = await resolveBalanceBefore({
+    companyId,
+    employeeId,
+    leaveTypeId: leaveType._id,
+    period,
+  });
 
   const balanceAfter = Number((balanceBefore - chargeableDays).toFixed(2));
   const sufficientBalance = balanceAfter >= 0;
 
-  return {
-    leaveTypeId: leaveType._id,
-    leaveTypeCode: leaveType.code,
-    leaveTypeName: leaveType.name,
-    applySandwichRule: Boolean(leaveType.applySandwichRule),
-    fromDate: parsed.fromDate,
-    toDate: parsed.toDate,
-    isHalfDay: parsed.isHalfDay,
-    ...leaveDays,
-    chargeableDays,
-    balanceBefore: Number(balanceBefore.toFixed(2)),
-    balanceAfter,
-    sufficientBalance,
-    period,
-  };
-}
-
-async function createAndSubmit({ companyId, employeeId, payload }) {
-  const preview = await previewLeaveDays({ companyId, payload: { ...payload, employeeId } });
-  const parsed = validateCreatePayload(payload);
-
-  if (!preview.sufficientBalance) {
+  if (requireSufficientBalance && !sufficientBalance) {
     throw new AppError(
-      `Insufficient leave balance. Available: ${preview.balanceBefore}, required: ${preview.chargeableDays}`,
+      `Insufficient leave balance. Available: ${balanceBefore}, required: ${chargeableDays}`,
       400,
       'INSUFFICIENT_LEAVE_BALANCE'
     );
   }
 
-  const { autoNumber } = await autoNumberService.getNextAutoNumber(
-    companyId,
-    AUTO_NUMBER_PREFIXES.LEAVE_APPLICATION
-  );
+  return {
+    parsed,
+    leaveType,
+    regionId,
+    period,
+    ...leaveDays,
+    chargeableDays,
+    balanceBefore: Number(balanceBefore.toFixed(2)),
+    balanceAfter,
+    sufficientBalance,
+  };
+}
 
-  return tenantApplications(companyId).create({
-    applicationNo: autoNumber,
+async function previewLeaveDays({ companyId, payload }) {
+  const employeeId = payload?.employeeId || null;
+  const preview = await buildLeavePreview({ companyId, payload, employeeId });
+
+  return {
+    leaveTypeId: preview.leaveType._id,
+    leaveTypeCode: preview.leaveType.code,
+    leaveTypeName: preview.leaveType.name,
+    applySandwichRule: Boolean(preview.leaveType.applySandwichRule),
+    allowsHalfDay: preview.leaveType.allowsHalfDay !== false,
+    fromDate: preview.parsed.fromDate,
+    toDate: preview.parsed.toDate,
+    isHalfDay: preview.parsed.isHalfDay,
+    regionId: preview.regionId,
+    workingDays: preview.workingDays,
+    weekendDays: preview.weekendDays,
+    holidayDays: preview.holidayDays,
+    sandwichDaysApplied: preview.sandwichDaysApplied,
+    totalCalendarDays: preview.totalCalendarDays,
+    chargeableDays: preview.chargeableDays,
+    balanceBefore: preview.balanceBefore,
+    balanceAfter: preview.balanceAfter,
+    sufficientBalance: preview.sufficientBalance,
+    period: preview.period,
+  };
+}
+
+function buildApplicationFields({ preview, employeeId, parsed, status, applicationNo = null }) {
+  const fields = {
     employeeId,
     leaveTypeId: parsed.leaveTypeId,
     reason: parsed.reason,
@@ -159,9 +228,89 @@ async function createAndSubmit({ companyId, employeeId, payload }) {
     sandwichDaysApplied: preview.sandwichDaysApplied,
     balanceBefore: preview.balanceBefore,
     balanceAfter: preview.balanceAfter,
-    status: LEAVE_APPLICATION_STATUS.SUBMITTED,
-    submittedAt: new Date(),
+    status,
+  };
+
+  if (applicationNo) {
+    fields.applicationNo = applicationNo;
+  }
+
+  if (status === LEAVE_APPLICATION_STATUS.SUBMITTED) {
+    fields.submittedAt = new Date();
+  }
+
+  return fields;
+}
+
+async function createDraft({ companyId, employeeId, payload }) {
+  const preview = await buildLeavePreview({ companyId, payload, employeeId });
+  const { autoNumber } = await autoNumberService.getNextAutoNumber(
+    companyId,
+    AUTO_NUMBER_PREFIXES.LEAVE_APPLICATION
+  );
+
+  return tenantApplications(companyId).create(
+    buildApplicationFields({
+      preview,
+      employeeId,
+      parsed: preview.parsed,
+      status: LEAVE_APPLICATION_STATUS.DRAFT,
+      applicationNo: autoNumber,
+    })
+  );
+}
+
+async function submitApplication({ companyId, employeeId, applicationId }) {
+  const application = await tenantApplications(companyId).findById(applicationId);
+
+  if (!application) {
+    throw new AppError('Leave application not found', 404, 'NOT_FOUND');
+  }
+
+  if (String(application.employeeId) !== String(employeeId)) {
+    throw new AppError('You can only submit your own applications', 403, 'FORBIDDEN');
+  }
+
+  if (application.status !== LEAVE_APPLICATION_STATUS.DRAFT) {
+    throw new AppError(
+      `Only draft applications can be submitted (current: ${application.status})`,
+      400,
+      'INVALID_STATUS'
+    );
+  }
+
+  const preview = await buildLeavePreview({
+    companyId,
+    payload: {
+      leaveTypeId: application.leaveTypeId,
+      fromDate: application.fromDate,
+      toDate: application.toDate,
+      reason: application.reason,
+      isHalfDay: application.isHalfDay,
+      attachmentPath: application.attachmentPath,
+    },
+    employeeId,
+    requireSufficientBalance: true,
   });
+
+  application.reason = preview.parsed.reason;
+  application.isHalfDay = preview.parsed.isHalfDay;
+  application.attachmentPath = preview.parsed.attachmentPath;
+  application.totalDays = preview.totalCalendarDays;
+  application.workingDays = preview.workingDays;
+  application.sandwichDaysApplied = preview.sandwichDaysApplied;
+  application.balanceBefore = preview.balanceBefore;
+  application.balanceAfter = preview.balanceAfter;
+  application.status = LEAVE_APPLICATION_STATUS.SUBMITTED;
+  application.submittedAt = new Date();
+
+  await application.save();
+  return application;
+}
+
+async function createAndSubmit({ companyId, employeeId, payload }) {
+  const draft = await createDraft({ companyId, employeeId, payload });
+  return submitApplication({ companyId, employeeId, applicationId: draft._id });
 }
 
 function parseStatusFilter(value) {
@@ -208,7 +357,7 @@ async function listApplications({ companyId, query = {}, employeeId = null }) {
   const baseQuery = tenantApplications(companyId)
     .find(filter)
     .sort({ createdAt: -1 })
-    .populate('leaveTypeId', 'code name applySandwichRule')
+    .populate('leaveTypeId', 'code name applySandwichRule allowsHalfDay')
     .populate('employeeId', 'employeeCode employeeName');
 
   const { docs, pagination: meta } = await executePaginatedQuery(baseQuery, pagination);
@@ -219,7 +368,7 @@ async function listApplications({ companyId, query = {}, employeeId = null }) {
 async function getApplicationById({ companyId, applicationId, employeeId = null }) {
   const application = await tenantApplications(companyId)
     .findById(applicationId)
-    .populate('leaveTypeId', 'code name applySandwichRule')
+    .populate('leaveTypeId', 'code name applySandwichRule allowsHalfDay')
     .populate('employeeId', 'employeeCode employeeName');
 
   if (!application) {
@@ -234,10 +383,13 @@ async function getApplicationById({ companyId, applicationId, employeeId = null 
 }
 
 /**
- * Chargeable days used for balance deduction:
- * workingDays + sandwichDaysApplied (when rule applied at create time).
+ * Chargeable days used for balance deduction.
  */
 function getChargeableDays(application) {
+  if (application.isHalfDay) {
+    return 0.5;
+  }
+
   const working = Number(application.workingDays) || 0;
   const sandwich = Number(application.sandwichDaysApplied) || 0;
   const chargeable = working + sandwich;
@@ -246,8 +398,12 @@ function getChargeableDays(application) {
 
 module.exports = {
   previewLeaveDays,
+  createDraft,
+  submitApplication,
   createAndSubmit,
   listApplications,
   getApplicationById,
   getChargeableDays,
+  resolveEmployeeRegionId,
+  loadHolidayDates,
 };

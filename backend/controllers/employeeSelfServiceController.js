@@ -13,7 +13,7 @@ async function leaveTypeOptions(req, res) {
   const options = await LeaveType.forTenant(req.companyId)
     .find({ isActive: true })
     .sort({ code: 1 })
-    .select('_id code name applySandwichRule');
+    .select('_id code name applySandwichRule allowsHalfDay annualEntitlement');
 
   return sendSuccess(res, options);
 }
@@ -54,6 +54,38 @@ async function applyLeave(req, res) {
   });
 
   return sendSuccess(res, application, 201);
+}
+
+async function createLeaveDraft(req, res) {
+  const employeeId = req.selfScope?.employeeId;
+
+  if (!employeeId) {
+    throw new AppError('Employee context is required', 403, 'EMPLOYEE_SCOPE_REQUIRED');
+  }
+
+  const application = await leaveApplicationService.createDraft({
+    companyId: req.companyId,
+    employeeId,
+    payload: req.body,
+  });
+
+  return sendSuccess(res, application, 201);
+}
+
+async function submitLeaveDraft(req, res) {
+  const employeeId = req.selfScope?.employeeId;
+
+  if (!employeeId) {
+    throw new AppError('Employee context is required', 403, 'EMPLOYEE_SCOPE_REQUIRED');
+  }
+
+  const application = await leaveApplicationService.submitApplication({
+    companyId: req.companyId,
+    employeeId,
+    applicationId: req.params.id,
+  });
+
+  return sendSuccess(res, application);
 }
 
 async function leaveHistory(req, res) {
@@ -174,6 +206,8 @@ module.exports = {
   leaveTypeOptions,
   previewLeave,
   applyLeave,
+  createLeaveDraft,
+  submitLeaveDraft,
   leaveHistory,
   leaveBalance,
   applyLoan,

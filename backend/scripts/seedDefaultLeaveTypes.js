@@ -47,6 +47,8 @@ const DEFAULT_LEAVE_TYPES = [
     allowsCarryForward: true,
     maxCarryForwardDays: 15,
     applySandwichRule: true,
+    maxAccumulation: 300,
+    hrApprovalRequired: false,
     isActive: true,
   },
   {

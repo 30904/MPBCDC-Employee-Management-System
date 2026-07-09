@@ -86,8 +86,20 @@ function calculateLeaveDays({ fromDate, toDate, holidays = [], applySandwichRule
   };
 }
 
+/** Excel sheet alias for sandwich / working-day calculation. */
+function calculateDays({ fromDate, toDate, holidays = [], applySandwichRule = false, regionId = null }) {
+  return calculateLeaveDays({
+    fromDate,
+    toDate,
+    holidays,
+    applySandwichRule,
+    regionId,
+  });
+}
+
 module.exports = {
   calculateLeaveDays,
+  calculateDays,
   eachDayInclusive,
   buildHolidaySet,
 };

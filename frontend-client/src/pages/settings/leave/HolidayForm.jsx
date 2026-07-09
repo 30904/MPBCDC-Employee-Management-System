@@ -11,6 +11,7 @@ const EMPTY_FORM = {
   name: '',
   date: '',
   holidayType: 'NATIONAL',
+  state: '',
   regionId: '',
   description: '',
   isActive: true,
@@ -25,6 +26,7 @@ function toFormValues(initialValues) {
     name: initialValues.name ?? '',
     date: initialValues.date ?? '',
     holidayType: initialValues.holidayType ?? 'NATIONAL',
+    state: initialValues.state ?? '',
     regionId: initialValues.region?._id || initialValues.regionId?._id || initialValues.regionId || '',
     description: initialValues.description ?? '',
     isActive: initialValues.isActive !== false,
@@ -36,6 +38,7 @@ function buildPayload(form) {
     name: form.name.trim(),
     date: form.date,
     holidayType: form.holidayType,
+    state: form.state.trim(),
     description: form.description.trim(),
     isActive: form.isActive,
   };
@@ -142,6 +145,15 @@ export default function HolidayForm({
               </option>
             ))}
           </select>
+        </label>
+        <label>
+          State
+          <input
+            type="text"
+            value={form.state}
+            onChange={(e) => updateField('state', e.target.value)}
+            placeholder="e.g. Maharashtra"
+          />
         </label>
         {showRegionField && (
           <label>
