@@ -13,7 +13,7 @@ async function leaveTypeOptions(req, res) {
   const options = await LeaveType.forTenant(req.companyId)
     .find({ isActive: true })
     .sort({ code: 1 })
-    .select('_id code name applySandwichRule allowsHalfDay');
+    .select('_id code name applySandwichRule allowsHalfDay annualEntitlement');
 
   return sendSuccess(res, options);
 }

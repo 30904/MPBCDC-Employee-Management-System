@@ -160,19 +160,49 @@ code {
   margin-bottom: 1rem;
 }
 
-.apply-loan-form select {
+.apply-loan-form select,
+.apply-loan-form input,
+.apply-loan-form textarea {
   padding: 0.5rem 0.75rem;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
   font: inherit;
+}
+
+.apply-loan-form select {
   max-width: 100%;
 }
 
-.apply-loan-form input {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font: inherit;
+.apply-loan-form textarea {
+  resize: vertical;
+  min-height: 5rem;
+}
+
+.apply-loan-form .checkbox-field {
+  justify-content: flex-end;
+}
+
+.apply-loan-form .checkbox-field span {
+  min-height: 1.25rem;
+}
+
+.apply-loan-form .checkbox-field input[type='checkbox'] {
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.35rem;
+  padding: 0;
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.form-actions .primary-btn,
+.form-actions .secondary-btn {
+  margin: 0;
 }
 
 .form-grid {

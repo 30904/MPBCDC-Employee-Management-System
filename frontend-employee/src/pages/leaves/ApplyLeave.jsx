@@ -36,6 +36,7 @@ export default function ApplyLeave() {
   );
 
   const halfDayAllowed = selectedType?.allowsHalfDay !== false;
+  const canSubmit = Boolean(preview?.sufficientBalance);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,8 +48,9 @@ export default function ApplyLeave() {
       try {
         const options = await fetchLeaveTypeOptions();
         if (!cancelled) {
-          setLeaveTypes(Array.isArray(options) ? options : []);
-          setLeaveTypeId(options?.[0]?._id || '');
+          const activeOnly = Array.isArray(options) ? options.filter((type) => type.isActive !== false) : [];
+          setLeaveTypes(activeOnly.length > 0 ? activeOnly : Array.isArray(options) ? options : []);
+          setLeaveTypeId((activeOnly[0] || options?.[0])?._id || '');
         }
       } catch (err) {
         if (!cancelled) {
@@ -102,7 +104,7 @@ export default function ApplyLeave() {
           setPreviewLoading(false);
         }
       }
-    }, 350);
+    }, 400);
 
     return () => {
       cancelled = true;
@@ -134,15 +136,22 @@ export default function ApplyLeave() {
     setSubmitError('');
     setSubmitSuccess('');
 
+    if (!canSubmit) {
+      setSubmitError('Resolve balance issues before submitting.');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = await buildPayload();
       const application = await submitLeaveApplication(payload);
-      setSubmitSuccess(`Application ${application.applicationNo} submitted successfully.`);
+      setSubmitSuccess(
+        `Application ${application.applicationNo} submitted successfully. Track status under Leave History.`
+      );
 
       window.setTimeout(() => {
         navigate('/leaves/history');
-      }, 1200);
+      }, 1500);
     } catch (err) {
       setSubmitError(getApiErrorMessage(err, 'Failed to submit leave application.'));
     } finally {
@@ -168,31 +177,49 @@ export default function ApplyLeave() {
 
   return (
     <div>
-      <PageHeader title="Apply Leave" subtitle="Submit a leave request for approval" />
+      <PageHeader
+        title="Apply Leave"
+        subtitle="Select a leave type, preview days and balance, and submit your application"
+      />
 
       <div className="card">
-        {loading && <p className="placeholder-text">Loading leave types...</p>}
+        {loading && <p className="placeholder-text">Loading available leave types…</p>}
         {error && <div className="form-error">{error}</div>}
 
         {!loading && !error && leaveTypes.length === 0 && (
-          <p className="placeholder-text">No active leave types available. Contact your administrator.</p>
+          <p className="placeholder-text">
+            No active leave types are available right now. Contact your HR administrator.
+          </p>
         )}
 
         {!loading && leaveTypes.length > 0 && (
-          <form onSubmit={handleSubmit}>
-            <div className="form-grid">
-              <label>
-                Leave Type
-                <select value={leaveTypeId} onChange={(event) => setLeaveTypeId(event.target.value)} required>
-                  {leaveTypes.map((type) => (
-                    <option key={type._id} value={type._id}>
-                      {type.name} ({type.code})
-                      {type.applySandwichRule ? ' — sandwich' : ''}
-                    </option>
-                  ))}
-                </select>
-              </label>
+          <form className="apply-loan-form" onSubmit={handleSubmit}>
+            <label>
+              Leave Type
+              <select value={leaveTypeId} onChange={(event) => setLeaveTypeId(event.target.value)} required>
+                {leaveTypes.map((type) => (
+                  <option key={type._id} value={type._id}>
+                    {type.name} ({type.code})
+                  </option>
+                ))}
+              </select>
+            </label>
 
+            {selectedType && (
+              <div className="loan-type-summary">
+                <p>
+                  <strong>Annual entitlement:</strong> {selectedType.annualEntitlement ?? '—'} days
+                </p>
+                <p>
+                  <strong>Sandwich rule:</strong> {selectedType.applySandwichRule ? 'Applicable' : 'Not applicable'}
+                </p>
+                <p>
+                  <strong>Half-day allowed:</strong> {halfDayAllowed ? 'Yes' : 'No'}
+                </p>
+              </div>
+            )}
+
+            <div className="form-grid">
               <label>
                 From Date
                 <input
@@ -202,7 +229,6 @@ export default function ApplyLeave() {
                   required
                 />
               </label>
-
               <label>
                 To Date
                 <input
@@ -212,51 +238,60 @@ export default function ApplyLeave() {
                   required
                 />
               </label>
-
               {halfDayAllowed && (
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 24 }}>
+                <label className="checkbox-field">
+                  <span>Half Day</span>
                   <input
                     type="checkbox"
                     checked={isHalfDay}
                     onChange={(event) => setIsHalfDay(event.target.checked)}
                   />
-                  Half Day
                 </label>
               )}
             </div>
 
             <label>
-              Reason
+              Reason (optional)
               <textarea
                 rows={3}
                 maxLength={1000}
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
-                placeholder="Brief reason for leave request"
+                placeholder="Brief reason for the leave request"
               />
             </label>
 
             <label>
-              Supporting document (PDF, max 5MB)
+              Supporting document (PDF, max 5MB, optional)
               <input
                 type="file"
-                accept="application/pdf,.pdf"
-                onChange={(event) => setAttachmentFile(event.target.files?.[0] || null)}
+                accept=".pdf,application/pdf"
+                onChange={(event) => setAttachmentFile(event.target.files?.[0] ?? null)}
               />
             </label>
 
-            {previewLoading && <p className="placeholder-text">Calculating leave days...</p>}
+            {previewLoading && <p className="placeholder-text">Calculating leave days…</p>}
             {previewError && <div className="form-error">{previewError}</div>}
-            {preview && !preview.sufficientBalance && (
-              <div className="form-error">
-                Insufficient balance before submit. Available {preview.balanceBefore}, required{' '}
-                {preview.chargeableDays}.
-              </div>
-            )}
 
             {preview && !previewLoading && (
-              <div className="eligibility-preview eligibility-preview--ok">
-                <h3>Leave days preview</h3>
+              <div
+                className={
+                  preview.sufficientBalance
+                    ? 'eligibility-preview eligibility-preview--ok'
+                    : 'eligibility-preview eligibility-preview--fail'
+                }
+              >
+                <h3>{preview.sufficientBalance ? 'Ready to submit' : 'Insufficient balance'}</h3>
+
+                {!preview.sufficientBalance && (
+                  <ul className="eligibility-reasons">
+                    <li>
+                      Available balance is {preview.balanceBefore} day(s); this request needs{' '}
+                      {preview.chargeableDays} day(s).
+                    </li>
+                  </ul>
+                )}
+
                 <div className="eligibility-derived">
                   <p>
                     <strong>Working days:</strong> {preview.workingDays}
@@ -269,7 +304,7 @@ export default function ApplyLeave() {
                   </p>
                   <p>
                     <strong>Sandwich total:</strong> {preview.sandwichDaysApplied}
-                    {preview.applySandwichRule ? ' (sandwich rule ON)' : ' (sandwich rule OFF)'}
+                    {preview.applySandwichRule ? ' (rule ON)' : ' (rule OFF)'}
                   </p>
                   <p>
                     <strong>Total deducted:</strong> {preview.chargeableDays}
@@ -297,14 +332,10 @@ export default function ApplyLeave() {
                 disabled={!leaveTypeId || !fromDate || !toDate || savingDraft || submitting}
                 onClick={handleSaveDraft}
               >
-                {savingDraft ? 'Saving draft...' : 'Save Draft'}
+                {savingDraft ? 'Saving draft…' : 'Save Draft'}
               </button>
-              <button
-                type="submit"
-                className="primary-btn"
-                disabled={!leaveTypeId || !fromDate || !toDate || submitting || !preview?.sufficientBalance}
-              >
-                {submitting ? 'Submitting...' : 'Submit Leave Request'}
+              <button type="submit" className="primary-btn" disabled={!canSubmit || submitting}>
+                {submitting ? 'Submitting…' : 'Submit Application'}
               </button>
             </div>
           </form>
